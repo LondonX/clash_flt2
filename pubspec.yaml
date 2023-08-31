@@ -1,0 +1,35 @@
+name: clash_pc_flt
+description: A new Flutter plugin project.
+version: 0.0.1
+homepage: https://github/com/LondonX/clash_pc_flt
+
+environment:
+  sdk: ">=3.1.0 <4.0.0"
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.0.2
+  ffi: ^2.1.0
+  proxy_manager:
+  yaml:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  ffigen: ^9.0.1
+
+flutter:
+  plugin:
+    platforms:
+      macos:
+        pluginClass: ClashPcFltPlugin
+      windows:
+        pluginClass: ClashPcFltPluginCApi
+ffigen:
+  output: "lib/ffi/generated_bindings.dart"
+  headers:
+    entry-points:
+      - "fclash/dist/libclash.h"

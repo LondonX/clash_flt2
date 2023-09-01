@@ -87,9 +87,9 @@ class _MyAppState extends State<MyApp> {
     final bool operationSuccess;
     if (shouldRun) {
       operationSuccess =
-          await ClashPcFlt.instance.startClash(_configResolveResult!);
+          await ClashPcFlt.instance.startSystemProxy(_configResolveResult!);
     } else {
-      await ClashPcFlt.instance.stopClash();
+      await ClashPcFlt.instance.stopSystemProxy();
       operationSuccess = true;
     }
     setState(() {

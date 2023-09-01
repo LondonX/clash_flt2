@@ -78,7 +78,8 @@ class ClashPcFlt {
   ///
   /// start system proxy
   ///
-  Future<bool> startClash(ClashConfigResolveResult configResolveResult) async {
+  Future<bool> startSystemProxy(
+      ClashConfigResolveResult configResolveResult) async {
     final hPort = configResolveResult.httpPort ?? configResolveResult.mixedPort;
     final sPort =
         configResolveResult.socksPort ?? configResolveResult.mixedPort;
@@ -96,7 +97,8 @@ class ClashPcFlt {
             '127.0.0.1',
             hPort,
           ),
-        if (sPort != null)
+        //Windows is NOT support socks
+        if (sPort != null && !Platform.isWindows)
           _proxyManager.setAsSystemProxy(
             ProxyTypes.socks,
             '127.0.0.1',
@@ -114,7 +116,7 @@ class ClashPcFlt {
   ///
   /// stop system proxy
   ///
-  Future<void> stopClash() async {
+  Future<void> stopSystemProxy() async {
     await _proxyManager.cleanSystemProxy();
   }
 

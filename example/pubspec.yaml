@@ -10,6 +10,9 @@ dependencies:
     sdk: flutter
   get:
   path_provider:
+  network_tools: # get port occupying status
+  yaml: # resolve port out of ClashPcFlt for using `network_tools`
+  flutter_emoji: # fix `yaml` unsupported emoji problem
 
   clash_pc_flt:
     path: ../

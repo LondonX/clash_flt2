@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:clash_pc_flt/clash_pc_flt.dart';
 import 'package:clash_pc_flt_example/proxy_selector_view.dart';
@@ -92,6 +94,30 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  Timer? _trafficUpdating;
+
+  ///
+  /// traffic updating can be called before [ClashPcFlt.instance.init]
+  ///
+  _startTrafficUpdating() {
+    _trafficUpdating = Timer.periodic(const Duration(seconds: 1), (timer) {
+      ClashPcFlt.instance.updateTraffic();
+    });
+  }
+
+  @override
+  void initState() {
+    ClashPcFlt.instance.init();
+    _startTrafficUpdating();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _trafficUpdating?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -124,14 +150,9 @@ class _MyAppState extends State<MyApp> {
             ),
             _buildStringListTile(
               context,
-              title: "3. ClashPcFlt.instance.init",
-              onTap: ClashPcFlt.instance.init,
-            ),
-            _buildStringListTile(
-              context,
-              title: "4. ClashPcFlt.instance.setConfig",
+              title: "3. ClashPcFlt.instance.setConfig",
               subtitle: """
-(http/https)port: ${_configResolveResult?.httpPort ?? "No config set"}
+port: ${_configResolveResult?.httpPort ?? "No config set"}
 socks-port: ${_configResolveResult?.socksPort ?? "No config set"}
 mixed-port: ${_configResolveResult?.mixedPort ?? "No config set"}
 proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
@@ -140,7 +161,7 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
             ),
             _buildStringListTile(
               context,
-              title: "5. ClashPcFlt.instance.selectProxy",
+              title: "4. ClashPcFlt.instance.selectProxy",
               subtitle: _proxySelection == null
                   ? null
                   : "${_proxySelection!.group.name}/${_proxySelection!.proxy}",
@@ -152,7 +173,7 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
                 final sysProxyEnabled = snapshot.data == true;
                 return SwitchListTile(
                   title:
-                      const Text("6. ClashPcFlt.instance.startClash/stopClash"),
+                      const Text("5. ClashPcFlt.instance.startClash/stopClash"),
                   value: sysProxyEnabled,
                   onChanged: _changingClashState
                       ? null
@@ -163,7 +184,7 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
               },
             ),
             ListTile(
-              title: const Text("7. ClashPcFlt.instance.setTunnelMode"),
+              title: const Text("6. ClashPcFlt.instance.setTunnelMode"),
               enabled: _configResolveResult != null,
               subtitle: StreamBuilder(
                 stream: ClashPcFlt.instance.tunnelMode,
@@ -184,6 +205,22 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
                         ),
                       );
                     }).toList(),
+                  );
+                },
+              ),
+            ),
+            ListTile(
+              title: const Text("ClashPcFlt.instance.traffic"),
+              subtitle: StreamBuilder(
+                stream: ClashPcFlt.instance.traffic,
+                builder: (context, snapshot) {
+                  final traffic = snapshot.data;
+                  if (traffic == null) return const Text("--");
+                  return Text(
+                    """
+Total: up: ${_trafficReadable(traffic.totalUpload)} down: ${_trafficReadable(traffic.totalDownload)}
+Current: up: ${_trafficReadable(traffic.currentUpload)}/s down: ${_trafficReadable(traffic.currentDownload)}/s
+""",
                   );
                 },
               ),
@@ -221,4 +258,12 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
       enabled: onTap != null,
     );
   }
+}
+
+String _trafficReadable(int traffic) {
+  if (traffic < 1024) return "${traffic}B";
+  if (traffic < pow(1024, 2)) {
+    return "${(traffic / pow(1024, 1)).toStringAsFixed(1)}KB";
+  }
+  return "${(traffic / pow(1024, 2)).toStringAsFixed(1)}MB";
 }

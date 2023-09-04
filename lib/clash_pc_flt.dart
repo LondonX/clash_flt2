@@ -12,9 +12,11 @@ import 'package:proxy_manager/proxy_manager.dart';
 import 'ffi/generated_bindings.dart';
 import 'entity/clash_config_resolve_result.dart';
 import 'utils.dart';
+import 'entity/clash_traffic.dart';
 
 export 'entity/clash_config_resolve_result.dart';
 export 'entity/clash_proxy_group.dart';
+export 'entity/clash_traffic.dart';
 
 late NativeLibrary clashFFI;
 const mobileChannel = MethodChannel("FClashPlugin");
@@ -39,12 +41,15 @@ class ClashPcFlt {
     return _delayPool[proxyName] ??= ValueNotifier(-1);
   }
 
+  final _traffic = StreamController<ClashTraffic>();
+  late final traffic = _traffic.stream.asBroadcastStream();
+
   ClashPcFlt._();
 
   ///
   /// load libs
   ///
-  Future<void> init() async {
+  void init() {
     final String libFileName;
     if (Platform.isWindows) {
       libFileName = "libclash.dll";
@@ -139,6 +144,10 @@ class ClashPcFlt {
     _systemProxyEnabled.add(false);
   }
 
+  ///
+  /// set tunnel in global, rule, direct mode
+  /// see [TunnelMode]
+  ///
   void setTunnelMode(TunnelMode mode) {
     final modeString = mode.name;
     clashFFI.set_tun_mode(modeString.toNativeUtf8().cast());
@@ -174,12 +183,27 @@ class ClashPcFlt {
     return clashFFI.close_connection(id) == 1;
   }
 
+  var _totalUp = 0;
+  var _totalDown = 0;
+
   ///
   /// get traffic through clash
   ///
-  String getTraffic() {
-    String traffic = clashFFI.get_traffic().cast<Utf8>().toDartString();
-    return traffic;
+  void updateTraffic() {
+    String trafficJson = clashFFI.get_traffic().cast<Utf8>().toDartString();
+    final json = jsonDecode(trafficJson);
+    final currentUp = json["Up"] as int;
+    final currentDown = json["Down"] as int;
+    _totalUp += currentUp;
+    _totalDown += currentDown;
+    _traffic.add(
+      ClashTraffic(
+        totalUpload: _totalUp,
+        totalDownload: _totalDown,
+        currentUpload: currentUp,
+        currentDownload: currentDown,
+      ),
+    );
   }
 
   ///

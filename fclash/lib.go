@@ -347,6 +347,21 @@ func get_configs() *C.char {
 	return C.CString(string(data))
 }
 
+// global: 0
+// rule: 1
+// direct: 2
+//export set_tun_mode
+func set_tun_mode(s *C.char) {
+	mode_str := C.GoString(s)
+	mode, _ := tunnel.ModeMapping[mode_str]
+	tunnel.SetMode(mode)
+}
+
+//export get_tun_mode
+func get_tun_mode() *C.char {
+	return C.CString(tunnel.Mode().String())
+}
+
 func main() {
 	fmt.Println("hello clash")
 }

@@ -27,6 +27,13 @@ class ClashPcFlt {
   final _logReceiver = ReceivePort();
   late final logStream = _logReceiver.asBroadcastStream();
 
+  final _systemProxyEnabled = StreamController<bool>();
+  late final systemProxyEnabled =
+      _systemProxyEnabled.stream.asBroadcastStream();
+
+  final _tunnelMode = StreamController<TunnelMode>();
+  late final tunnelMode = _tunnelMode.stream.asBroadcastStream();
+
   ClashPcFlt._();
 
   ///
@@ -58,6 +65,10 @@ class ClashPcFlt {
     final configs = jsonDecode(configsJson);
     final proxiesJson = clashFFI.get_proxies().cast<Utf8>().toDartString();
     final proxies = jsonDecode(proxiesJson);
+    final modeString = configs["mode"] as String?;
+    final mode = findTunnelMode(modeString);
+    assert(mode != null, "mode is not the one of enum TunnelMode.");
+    _tunnelMode.add(mode!);
     return ClashConfigResolveResult(
       httpPort: (configs["port"] as int).takeIf((v) => v != 0),
       socksPort: (configs["socks-port"] as int).takeIf((v) => v != 0),
@@ -105,11 +116,13 @@ class ClashPcFlt {
             sPort,
           ),
       ]);
+      _systemProxyEnabled.add(true);
       return true;
     } catch (e, stack) {
       _log(e);
       debugPrintStack(stackTrace: stack);
     }
+    _systemProxyEnabled.add(false);
     return false;
   }
 
@@ -118,6 +131,16 @@ class ClashPcFlt {
   ///
   Future<void> stopSystemProxy() async {
     await _proxyManager.cleanSystemProxy();
+    _systemProxyEnabled.add(false);
+  }
+
+  void setTunnelMode(TunnelMode mode) {
+    final modeString = mode.name;
+    clashFFI.set_tun_mode(modeString.toNativeUtf8().cast());
+    final resultString = clashFFI.get_tun_mode().cast<Utf8>().toDartString();
+    final result = findTunnelMode(resultString);
+    assert(result != null, "mode is not the one of enum TunnelMode.");
+    _tunnelMode.add(result!);
   }
 
   ///
@@ -180,4 +203,20 @@ extension _Ext<T> on T {
     if (condition.call(this)) return this;
     return null;
   }
+}
+
+enum TunnelMode {
+  global,
+  rule,
+  direct,
+}
+
+TunnelMode? findTunnelMode(String? mode) {
+  if (mode == null) return null;
+  for (var tunnelMode in TunnelMode.values) {
+    if (tunnelMode.name.toLowerCase() == mode.toLowerCase()) {
+      return tunnelMode;
+    }
+  }
+  return null;
 }

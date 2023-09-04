@@ -274,6 +274,30 @@ class NativeLibrary {
           'get_configs');
   late final _get_configs =
       _get_configsPtr.asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  void set_tun_mode(
+    ffi.Pointer<ffi.Char> mode,
+  ) {
+    return _set_tun_mode(
+      mode,
+    );
+  }
+
+  late final _set_tun_modePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+          'set_tun_mode');
+  late final _set_tun_mode =
+      _set_tun_modePtr.asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  ffi.Pointer<ffi.Char> get_tun_mode() {
+    return _get_tun_mode();
+  }
+
+  late final _get_tun_modePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+          'get_tun_mode');
+  late final _get_tun_mode =
+      _get_tun_modePtr.asFunction<ffi.Pointer<ffi.Char> Function()>();
 }
 
 final class __mbstate_t extends ffi.Union {

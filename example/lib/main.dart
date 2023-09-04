@@ -26,7 +26,6 @@ class _MyAppState extends State<MyApp> {
   ProxySelection? _proxySelection;
   ClashConfigResolveResult? _configResolveResult;
   var _changingClashState = false;
-  var _clashRunning = false;
 
   _downloadYamlFile() async {
     setState(() {
@@ -82,21 +81,14 @@ class _MyAppState extends State<MyApp> {
   _toggleRunning(bool shouldRun) async {
     setState(() {
       _changingClashState = true;
-      _clashRunning = shouldRun;
     });
-    final bool operationSuccess;
     if (shouldRun) {
-      operationSuccess =
-          await ClashPcFlt.instance.startSystemProxy(_configResolveResult!);
+      await ClashPcFlt.instance.startSystemProxy(_configResolveResult!);
     } else {
       await ClashPcFlt.instance.stopSystemProxy();
-      operationSuccess = true;
     }
     setState(() {
       _changingClashState = false;
-      if (!operationSuccess) {
-        _clashRunning = !_clashRunning;
-      }
     });
   }
 
@@ -113,7 +105,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: ListView(
           children: [
-            _buildListTile(
+            _buildStringListTile(
               context,
               title: "1. Download yaml file",
               subtitle: _isDownloading
@@ -123,19 +115,19 @@ class _MyAppState extends State<MyApp> {
                       : "Downloaded ${_yamlFile!.path}",
               onTap: _downloadYamlFile,
             ),
-            _buildListTile(
+            _buildStringListTile(
               context,
               title: "2. Save Country.mmdb into clash home",
               subtitle:
                   _mmdbFile == null ? null : "Saved at: ${_mmdbFile!.path}",
               onTap: _yamlFile == null ? null : _saveMmdb,
             ),
-            _buildListTile(
+            _buildStringListTile(
               context,
               title: "3. ClashPcFlt.instance.init",
               onTap: ClashPcFlt.instance.init,
             ),
-            _buildListTile(
+            _buildStringListTile(
               context,
               title: "4. ClashPcFlt.instance.setConfig",
               subtitle: """
@@ -146,7 +138,7 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
 """,
               onTap: _yamlFile == null || _mmdbFile == null ? null : _setConfig,
             ),
-            _buildListTile(
+            _buildStringListTile(
               context,
               title: "5. ClashPcFlt.instance.selectProxy",
               subtitle: _proxySelection == null
@@ -154,14 +146,47 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
                   : "${_proxySelection!.group.name}/${_proxySelection!.proxy}",
               onTap: _configResolveResult == null ? null : _selectProxy,
             ),
-            SwitchListTile(
-              title: const Text("6. ClashPcFlt.instance.startClash/stopClash"),
-              value: _clashRunning,
-              onChanged: _changingClashState
-                  ? null
-                  : _proxySelection == null
+            StreamBuilder(
+              stream: ClashPcFlt.instance.systemProxyEnabled,
+              builder: (context, snapshot) {
+                final sysProxyEnabled = snapshot.data == true;
+                return SwitchListTile(
+                  title:
+                      const Text("6. ClashPcFlt.instance.startClash/stopClash"),
+                  value: sysProxyEnabled,
+                  onChanged: _changingClashState
                       ? null
-                      : _toggleRunning,
+                      : _proxySelection == null
+                          ? null
+                          : _toggleRunning,
+                );
+              },
+            ),
+            ListTile(
+              title: const Text("7. ClashPcFlt.instance.setTunnelMode"),
+              enabled: _configResolveResult != null,
+              subtitle: StreamBuilder(
+                stream: ClashPcFlt.instance.tunnelMode,
+                builder: (context, snapshot) {
+                  return Row(
+                    children: TunnelMode.values.map((e) {
+                      return Expanded(
+                        child: RadioListTile<TunnelMode?>(
+                          value: e,
+                          groupValue: snapshot.data,
+                          onChanged: _configResolveResult == null
+                              ? null
+                              : (value) {
+                                  if (value == null) return;
+                                  ClashPcFlt.instance.setTunnelMode(value);
+                                },
+                          title: Text(e.name),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -169,15 +194,29 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
     );
   }
 
-  Widget _buildListTile(
+  Widget _buildStringListTile(
     BuildContext context, {
     required String title,
     String? subtitle,
     Function()? onTap,
   }) {
+    return _buildListTile(
+      context,
+      title: title,
+      subtitle: subtitle == null ? null : Text(subtitle),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildListTile(
+    BuildContext context, {
+    required String title,
+    Widget? subtitle,
+    Function()? onTap,
+  }) {
     return ListTile(
       title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle),
+      subtitle: subtitle,
       onTap: onTap,
       enabled: onTap != null,
     );

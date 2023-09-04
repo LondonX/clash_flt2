@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:clash_pc_flt/clash_pc_flt.dart';
 import 'package:clash_pc_flt_example/proxy_selector_view.dart';
 import 'package:clash_pc_flt_example/sensitive_data.dart';
-import 'package:clash_pc_flt_example/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -58,22 +57,6 @@ class _HomeViewState extends State<HomeView> {
 
   _setConfig() async {
     if (_yamlFile == null || _mmdbFile == null) return;
-    // port in use check
-    final ports = getPortsInYaml(_yamlFile!);
-    if (ports.isEmpty) {
-      _showAlert("No port, socks-port, mixed-port defined in yaml.");
-      return;
-    }
-    final usedPorts = <int>{};
-    await Future.wait(ports.map((port) async {
-      final isUsed = await isPortUsed(port);
-      if (isUsed) usedPorts.add(port);
-    }));
-    if (usedPorts.isNotEmpty) {
-      _showAlert(
-          "port ${usedPorts.join(", ")} defined in yaml as already in use.");
-      return;
-    }
     final result = ClashPcFlt.instance.setConfig(_yamlFile!, _yamlFile!.parent);
     setState(() {
       _configResolveResult = result;

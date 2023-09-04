@@ -35,6 +35,21 @@ class _ProxySelectorViewState extends State<ProxySelectorView>
     vsync: this,
   );
 
+  var _testing = false;
+  _testDelay() async {
+    setState(() {
+      _testing = true;
+    });
+    final allProxies = <String>{};
+    for (var group in _displayGroups) {
+      allProxies.addAll(group.proxies.map((e) => e.name));
+    }
+    await ClashPcFlt.instance.testDelay(allProxies);
+    setState(() {
+      _testing = false;
+    });
+  }
+
   @override
   void dispose() {
     _tab.dispose();
@@ -56,6 +71,20 @@ class _ProxySelectorViewState extends State<ProxySelectorView>
               .toList(),
           controller: _tab,
         ),
+        actions: [
+          _testing
+              ? const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox.square(
+                    dimension: 24,
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : IconButton(
+                  onPressed: _testDelay,
+                  icon: const Icon(Icons.speed),
+                ),
+        ],
       ),
       body: TabBarView(
         controller: _tab,
@@ -67,6 +96,23 @@ class _ProxySelectorViewState extends State<ProxySelectorView>
                   final proxy = group.proxies[index];
                   return ListTile(
                     title: Text(proxy.name),
+                    subtitle: ValueListenableBuilder(
+                      valueListenable: ClashPcFlt.instance.delayOf(proxy.name),
+                      builder: (context, delay, child) {
+                        return Text(
+                          "ClashPcFlt.instance.delayOf(proxy.name): $delay",
+                          style: TextStyle(
+                            color: delay == -1
+                                ? Colors.red
+                                : delay < 300
+                                    ? Colors.green
+                                    : delay < 1000
+                                        ? Colors.amber
+                                        : Colors.red,
+                          ),
+                        );
+                      },
+                    ),
                     onTap: group.type == "Selector"
                         ? () {
                             Navigator.of(context).pop(

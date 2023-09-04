@@ -34,6 +34,11 @@ class ClashPcFlt {
   final _tunnelMode = StreamController<TunnelMode>();
   late final tunnelMode = _tunnelMode.stream.asBroadcastStream();
 
+  final _delayPool = <String, ValueNotifier<int>>{};
+  ValueNotifier<int> delayOf(String proxyName) {
+    return _delayPool[proxyName] ??= ValueNotifier(-1);
+  }
+
   ClashPcFlt._();
 
   ///
@@ -189,6 +194,49 @@ class ClashPcFlt {
     }
     final nativePort = _logReceiver.sendPort.nativePort;
     clashFFI.start_log(nativePort);
+  }
+
+  Future<void> testDelay(
+    Iterable<String> proxyNames, {
+    Duration timeout = const Duration(seconds: 5),
+    String url = "https://www.google.com",
+  }) async {
+    await Future.wait(
+      proxyNames.map(
+        (proxyName) async {
+          final delay = await _testDelay(
+            proxyName,
+            timeout.inMilliseconds,
+            url,
+          );
+          delayOf(proxyName).value = delay;
+        },
+      ),
+    );
+  }
+
+  Future<int> _testDelay(String proxyName, int timeout, String url) async {
+    try {
+      final completer = Completer<int>();
+      final receiver = ReceivePort();
+      clashFFI.async_test_delay(proxyName.toNativeUtf8().cast(),
+          url.toNativeUtf8().cast(), timeout, receiver.sendPort.nativePort);
+      final subs = receiver.listen((message) {
+        if (!completer.isCompleted) {
+          completer.complete(json.decode(message)['delay']);
+        }
+      });
+      // 5s timeout, we add 1s
+      Future.delayed(const Duration(seconds: 6), () {
+        if (!completer.isCompleted) {
+          completer.complete(-1);
+        }
+        subs.cancel();
+      });
+      return completer.future;
+    } catch (e) {
+      return -1;
+    }
   }
 }
 

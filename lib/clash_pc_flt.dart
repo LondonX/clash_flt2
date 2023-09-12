@@ -29,20 +29,26 @@ class ClashPcFlt {
   final _logReceiver = ReceivePort();
   late final logStream = _logReceiver.asBroadcastStream();
 
-  final _systemProxyEnabled = StreamController<bool>();
-  late final systemProxyEnabled =
-      _systemProxyEnabled.stream.asBroadcastStream();
+  ///
+  /// readonly, is currently system proxy
+  ///
+  final systemProxyEnabled = ValueNotifier(false);
 
-  final _tunnelMode = StreamController<TunnelMode>();
-  late final tunnelMode = _tunnelMode.stream.asBroadcastStream();
+  ///
+  /// readonly, tunnel mode in rule, global, direct
+  /// see [TunnelMode]
+  ///
+  final tunnelMode = ValueNotifier(TunnelMode.values.first);
+
+  ///
+  /// readonly, current and total traffic
+  ///
+  final traffic = ValueNotifier(ClashTraffic.zero);
 
   final _delayPool = <String, ValueNotifier<int>>{};
   ValueNotifier<int> delayOf(String proxyName) {
     return _delayPool[proxyName] ??= ValueNotifier(-1);
   }
-
-  final _traffic = StreamController<ClashTraffic>();
-  late final traffic = _traffic.stream.asBroadcastStream();
 
   ClashPcFlt._();
 
@@ -76,9 +82,9 @@ class ClashPcFlt {
     final proxiesJson = clashFFI.get_proxies().cast<Utf8>().toDartString();
     final proxies = jsonDecode(proxiesJson);
     final modeString = configs["mode"] as String?;
-    final mode = findTunnelMode(modeString);
+    final mode = _findTunnelMode(modeString);
     assert(mode != null, "mode is not the one of enum TunnelMode.");
-    _tunnelMode.add(mode!);
+    tunnelMode.value = mode!;
     return ClashConfigResolveResult(
       httpPort: (configs["port"] as int).takeIf((v) => v != 0),
       socksPort: (configs["socks-port"] as int).takeIf((v) => v != 0),
@@ -126,13 +132,13 @@ class ClashPcFlt {
             sPort,
           ),
       ]);
-      _systemProxyEnabled.add(true);
+      systemProxyEnabled.value = true;
       return true;
     } catch (e, stack) {
       _log(e);
       debugPrintStack(stackTrace: stack);
     }
-    _systemProxyEnabled.add(false);
+    systemProxyEnabled.value = false;
     return false;
   }
 
@@ -141,7 +147,7 @@ class ClashPcFlt {
   ///
   Future<void> stopSystemProxy() async {
     await _proxyManager.cleanSystemProxy();
-    _systemProxyEnabled.add(false);
+    systemProxyEnabled.value = (false);
   }
 
   ///
@@ -152,14 +158,13 @@ class ClashPcFlt {
     final modeString = mode.name;
     clashFFI.set_tun_mode(modeString.toNativeUtf8().cast());
     final resultString = clashFFI.get_tun_mode().cast<Utf8>().toDartString();
-    final result = findTunnelMode(resultString);
+    final result = _findTunnelMode(resultString);
     assert(result != null, "mode is not the one of enum TunnelMode.");
-    _tunnelMode.add(result!);
+    tunnelMode.value = result!;
   }
 
   ///
   /// get current clash connections
-  /// key is connectionId, TODO what is value
   ///
   Map<String, dynamic> getConnections() {
     String connections =
@@ -196,23 +201,24 @@ class ClashPcFlt {
     final currentDown = json["Down"] as int;
     _totalUp += currentUp;
     _totalDown += currentDown;
-    _traffic.add(
-      ClashTraffic(
-        totalUpload: _totalUp,
-        totalDownload: _totalDown,
-        currentUpload: currentUp,
-        currentDownload: currentDown,
-      ),
+    traffic.value = ClashTraffic(
+      totalUpload: _totalUp,
+      totalDownload: _totalDown,
+      currentUpload: currentUp,
+      currentDownload: currentDown,
     );
   }
+
+  StreamSubscription? _logging;
 
   ///
   /// start clash logging
   /// logs will pollute into [logStream]
+  /// see [stopLogging]
   ///
   void startLogging() {
     if (!kReleaseMode) {
-      logStream.listen((event) {
+      _logging = logStream.listen((event) {
         _log("logStream: $event");
       });
     }
@@ -220,8 +226,20 @@ class ClashPcFlt {
     clashFFI.start_log(nativePort);
   }
 
+  ///
+  /// stop clash logging
+  /// see [startLogging]
+  ///
+  void stopLogging() {
+    _logging?.cancel();
+    clashFFI.stop_log();
+  }
+
+  ///
+  /// test delay of given [proxyNames]
+  ///
   Future<void> testDelay(
-    Iterable<String> proxyNames, {
+    Set<String> proxyNames, {
     Duration timeout = const Duration(seconds: 5),
     String url = "https://www.google.com",
   }) async {
@@ -278,12 +296,12 @@ extension _Ext<T> on T {
 }
 
 enum TunnelMode {
-  global,
   rule,
+  global,
   direct,
 }
 
-TunnelMode? findTunnelMode(String? mode) {
+TunnelMode? _findTunnelMode(String? mode) {
   if (mode == null) return null;
   for (var tunnelMode in TunnelMode.values) {
     if (tunnelMode.name.toLowerCase() == mode.toLowerCase()) {

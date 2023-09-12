@@ -9,4 +9,11 @@ class ClashTraffic {
     required this.currentUpload,
     required this.currentDownload,
   });
+
+  static const zero = ClashTraffic(
+    totalUpload: 0,
+    totalDownload: 0,
+    currentUpload: 0,
+    currentDownload: 0,
+  );
 }

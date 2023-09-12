@@ -165,14 +165,13 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
                 : "${_proxySelection!.group.name}/${_proxySelection!.proxy}",
             onTap: _configResolveResult == null ? null : _selectProxy,
           ),
-          StreamBuilder(
-            stream: ClashPcFlt.instance.systemProxyEnabled,
-            builder: (context, snapshot) {
-              final sysProxyEnabled = snapshot.data == true;
+          ValueListenableBuilder(
+            valueListenable: ClashPcFlt.instance.systemProxyEnabled,
+            builder: (context, systemProxyEnabled, widget) {
               return SwitchListTile(
                 title:
                     const Text("5. ClashPcFlt.instance.startClash/stopClash"),
-                value: sysProxyEnabled,
+                value: systemProxyEnabled,
                 onChanged: _changingClashState
                     ? null
                     : _proxySelection == null
@@ -184,15 +183,15 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
           ListTile(
             title: const Text("6. ClashPcFlt.instance.setTunnelMode"),
             enabled: _configResolveResult != null,
-            subtitle: StreamBuilder(
-              stream: ClashPcFlt.instance.tunnelMode,
-              builder: (context, snapshot) {
+            subtitle: ValueListenableBuilder(
+              valueListenable: ClashPcFlt.instance.tunnelMode,
+              builder: (context, tunnelMode, widget) {
                 return Row(
                   children: TunnelMode.values.map((e) {
                     return Expanded(
                       child: RadioListTile<TunnelMode?>(
                         value: e,
-                        groupValue: snapshot.data,
+                        groupValue: tunnelMode,
                         onChanged: _configResolveResult == null
                             ? null
                             : (value) {
@@ -209,11 +208,9 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
           ),
           ListTile(
             title: const Text("ClashPcFlt.instance.traffic"),
-            subtitle: StreamBuilder(
-              stream: ClashPcFlt.instance.traffic,
-              builder: (context, snapshot) {
-                final traffic = snapshot.data;
-                if (traffic == null) return const Text("--");
+            subtitle: ValueListenableBuilder(
+              valueListenable: ClashPcFlt.instance.traffic,
+              builder: (context, traffic, widget) {
                 return Text(
                   """
 Total: up: ${_trafficReadable(traffic.totalUpload)} down: ${_trafficReadable(traffic.totalDownload)}

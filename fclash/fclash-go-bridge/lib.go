@@ -2,6 +2,7 @@ package fclashgobridge
 
 /*
 #include "stdint.h"
+#include "stdlib.h"
 #include "dart_api_dl/dart_api_dl.h"
 #include "dart_api_dl/dart_api_dl.c"
 #include "dart_api_dl/dart_native_api.h"
@@ -32,6 +33,7 @@ func SendToPort(port int64, msg string) {
 	// union type, we do a force convertion
 	ptr := unsafe.Pointer(&obj.value[0])
 	*(**C.char)(ptr) = msg_obj
+	defer C.free(unsafe.Pointer(msg_obj))
 	ret := C.GoDart_PostCObject(C.Dart_Port_DL(port), &obj)
 	if !ret {
 		fmt.Println("ERROR: post to port ", port, " failed", msg)

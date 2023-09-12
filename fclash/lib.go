@@ -61,7 +61,7 @@ func set_home_dir(home *C.char) int {
 	home_gostr := C.GoString(home)
 	info, err := os.Stat(home_gostr)
 	if err == nil && info.IsDir() {
-		// fmt.Println("GO: set home dir to", home_gostr)
+		fmt.Println("GO: set home dir to", home_gostr)
 		constant.SetHomeDir(home_gostr)
 		return 0
 	} else {
@@ -254,16 +254,16 @@ func change_config_field(s *C.char) C.long {
 	}
 
 	ports := P.GetPorts()
+	ports.MixedPort = pointerOrDefault(general.MixedPort, ports.MixedPort)
+	ports.SocksPort = pointerOrDefault(general.SocksPort, ports.SocksPort)
+	ports.RedirPort = pointerOrDefault(general.RedirPort, ports.RedirPort)
+	ports.TProxyPort = pointerOrDefault(general.TProxyPort, ports.TProxyPort)
+	ports.MixedPort = pointerOrDefault(general.MixedPort, ports.MixedPort)
 
 	tcpIn := tunnel.TCPIn()
 	udpIn := tunnel.UDPIn()
 	// natTable := tunnel.NatTable()
-
-	P.ReCreateHTTP(pointerOrDefault(general.Port, ports.Port), tcpIn)
-	P.ReCreateSocks(pointerOrDefault(general.SocksPort, ports.SocksPort), tcpIn, udpIn)
-	P.ReCreateRedir(pointerOrDefault(general.RedirPort, ports.RedirPort), tcpIn, udpIn)
-	P.ReCreateTProxy(pointerOrDefault(general.TProxyPort, ports.TProxyPort), tcpIn, udpIn)
-	P.ReCreateMixed(pointerOrDefault(general.MixedPort, ports.MixedPort), tcpIn, udpIn)
+	P.ReCreatePortsListeners(*ports, tcpIn, udpIn)
 
 	if general.Mode != nil {
 		tunnel.SetMode(*general.Mode)
@@ -361,7 +361,6 @@ func set_tun_mode(s *C.char) {
 func get_tun_mode() *C.char {
 	return C.CString(tunnel.Mode().String())
 }
-
 func main() {
-	fmt.Println("hello clash")
+	fmt.Println("hello fclash")
 }

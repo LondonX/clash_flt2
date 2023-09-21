@@ -38,7 +38,7 @@ dart run ffigen
 * Remove App sand box in `TARGETS > Signing & Capabilities` if you want to set as system proxy.
 
 ## Windows
-* Add these into `windows/CMakeList.txt`, the `PATH_TO_LIBCLASH.DLL` typically is `./fclash/dist/libclash.dll`.
+* Add these into `windows/CMakeList.txt`, the `PATH_TO_LIBCLASH.DLL` typically is `../fclash/dist/libclash.dll`.
     ```cmake
     # Install libclash
     install(FILES "PATH_TO_LIBCLASH.DLL" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

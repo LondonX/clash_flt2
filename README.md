@@ -34,6 +34,7 @@ dart run ffigen
 * Add `libclash.dylib` into `Runner/Frameworks` (you can uncheck `Copy items if needed` if you want).
 * Set to `Embed & Sign` of `libclash.dylib` in `TARGETS > Runner > General > Frameworks, Libraries, and Embedded content`.
 * Add `libclash.dylib` into `TARGETS > Runner > Build Phases > Copy Bundle Resources`.
+* Change the status of `libclash.dylib` into `Optional` in `TARGETS > Runner > Build Phases > Link Binary With Libraries`.
 * Add path which `libclash.dylib` can be found at (typically `$(PROJECT_DIR)/../fclash/dist`) into `TARGETS > Runner > Build Settings > Search Paths > Library Search Paths`.
 * Remove App sand box in `TARGETS > Signing & Capabilities` if you want to set as system proxy.
 

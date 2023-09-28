@@ -10,8 +10,8 @@ class ClashConfigResolveResult {
     required this.socksPort,
     required this.mixedPort,
     required this.proxyGroups,
-  }) : assert(
-          httpPort != null || socksPort != null || mixedPort != null,
-          "no port config",
-        );
+  });
+
+  bool get hasNoPort =>
+      httpPort == null && socksPort == null && mixedPort == null;
 }

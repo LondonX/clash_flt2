@@ -40,6 +40,7 @@ func clash_init(home_dir *C.char) int {
 	// constant.
 	err := config.Init(home)
 	if err != nil {
+		fmt.Println("clash init failed:", err)
 		return -1
 	}
 	return 0

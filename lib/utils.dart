@@ -36,3 +36,18 @@ List<ClashProxyGroup> buildProxyGroups(Map<String, dynamic> proxies) {
   }
   return results;
 }
+
+extension ClashConfigExt on String {
+  String replaceGeneralConfigValue(Map<String, Object> replacement) {
+    List<String> lines = split('\n');
+    for (int i = 0; i < lines.length; i++) {
+      for (var key in replacement.keys) {
+        final newValue = replacement[key];
+        if (lines[i].startsWith('$key:')) {
+          lines[i] = '$key: $newValue';
+        }
+      }
+    }
+    return lines.join('\n');
+  }
+}

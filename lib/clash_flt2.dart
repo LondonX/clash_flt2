@@ -59,9 +59,10 @@ class ClashFlt2 {
     final String libFileName;
     if (Platform.isWindows) {
       libFileName = "libclash.dll";
-    } else if (Platform.isMacOS) {
+    } else if (Platform.isMacOS || Platform.isIOS) {
       libFileName = "libclash.dylib";
     } else {
+      // Android / Linux
       libFileName = "libclash.so";
     }
     final lib = ffi.DynamicLibrary.open(libFileName);
@@ -73,7 +74,28 @@ class ClashFlt2 {
   /// init clash and set configs
   ///
   ClashConfigResolveResult? setConfig(File yamlFile, Directory clashHome) {
-    clashFFI.set_config(yamlFile.path.toNativeUtf8().cast());
+    ///
+    /// Android / iOS needs a dummy Clash running on App for profile resolving and delay testing
+    /// while a functionality Clash for tunnelling should be running on VpnService (Android) and NetworkExtension (iOS).
+    ///
+    final File targetYamlFile;
+    if (Platform.isAndroid || Platform.isIOS) {
+      final dummyYaml = yamlFile.readAsStringSync().replaceGeneralConfigValue({
+        "port": 0,
+        "socks-port": 0,
+        "redir-port": 0,
+        "tproxy-port": 0,
+        "mixed-port": 0,
+      });
+      targetYamlFile = File(
+        "${yamlFile.parent.path}${Platform.pathSeparator}dummyProfile.yaml",
+      )..createSync();
+      targetYamlFile.writeAsStringSync(dummyYaml.toString(), flush: true);
+    } else {
+      targetYamlFile = yamlFile;
+    }
+
+    clashFFI.set_config(targetYamlFile.path.toNativeUtf8().cast());
     clashFFI.set_home_dir(clashHome.path.toNativeUtf8().cast());
     clashFFI.clash_init(clashHome.path.toNativeUtf8().cast());
     clashFFI.parse_options();

@@ -276,10 +276,10 @@ class NativeLibrary {
       _get_configsPtr.asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   void set_tun_mode(
-    ffi.Pointer<ffi.Char> mode,
+    ffi.Pointer<ffi.Char> s,
   ) {
     return _set_tun_mode(
-      mode,
+      s,
     );
   }
 

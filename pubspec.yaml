@@ -15,8 +15,6 @@ dependencies:
   proxy_manager:
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_lints: ^2.0.0
   ffigen: ^9.0.1
 
@@ -27,6 +25,11 @@ flutter:
         pluginClass: ClashFlt2Plugin
       windows:
         pluginClass: ClashFlt2PluginCApi
+      android:
+        package: com.LondonX.clash_flt2
+        pluginClass: ClashFlt2Plugin
+      # ios:
+      #   pluginClass: ClashFlt2Plugin
 ffigen:
   output: "lib/ffi/generated_bindings.dart"
   headers:

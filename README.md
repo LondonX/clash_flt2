@@ -45,3 +45,28 @@ dart run ffigen
     install(FILES "PATH_TO_LIBCLASH.DLL" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
     ```
+
+## Android
+* Move `libclash.so` files into `src/main/jniLibs`(create if not exists) directory, like this
+    ```
+    app/
+    └── src/
+        └── main/
+            └── jniLibs/
+                ├── arm64-v8a/
+                │   └── libclash.so
+                └── armeabi-v7a/
+                    └── libclash.so
+    ```
+* Modify app-level `build.gradle`
+    ```gradle
+    android {
+        defaultConfig {
+            ndk {
+                abiFilters 'arm64-v8a', 'armeabi-v7a'
+            }
+            // ...
+        }
+        // ...
+    }
+    ```

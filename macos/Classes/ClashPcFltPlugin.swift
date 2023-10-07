@@ -1,10 +1,10 @@
 import Cocoa
 import FlutterMacOS
 
-public class ClashPcFltPlugin: NSObject, FlutterPlugin {
+public class ClashFlt2Plugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "clash_pc_flt", binaryMessenger: registrar.messenger)
-    let instance = ClashPcFltPlugin()
+    let channel = FlutterMethodChannel(name: "clash_flt2", binaryMessenger: registrar.messenger)
+    let instance = ClashFlt2Plugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:clash_pc_flt/clash_pc_flt.dart';
-import 'package:clash_pc_flt_example/proxy_selector_view.dart';
-import 'package:clash_pc_flt_example/sensitive_data.dart';
+import 'package:clash_flt2/clash_flt2.dart';
+import 'package:clash_flt2_example/proxy_selector_view.dart';
+import 'package:clash_flt2_example/sensitive_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -57,7 +57,7 @@ class _HomeViewState extends State<HomeView> {
 
   _setConfig() async {
     if (_yamlFile == null || _mmdbFile == null) return;
-    final result = ClashPcFlt.instance.setConfig(_yamlFile!, _yamlFile!.parent);
+    final result = ClashFlt2.instance.setConfig(_yamlFile!, _yamlFile!.parent);
     setState(() {
       _configResolveResult = result;
     });
@@ -70,7 +70,7 @@ class _HomeViewState extends State<HomeView> {
       configResolveResult: _configResolveResult!,
     );
     if (selection == null) return;
-    ClashPcFlt.instance.selectProxy(selection.group.name, selection.proxy);
+    ClashFlt2.instance.selectProxy(selection.group.name, selection.proxy);
     setState(() {
       _proxySelection = selection;
     });
@@ -81,9 +81,9 @@ class _HomeViewState extends State<HomeView> {
       _changingClashState = true;
     });
     if (shouldRun) {
-      await ClashPcFlt.instance.startSystemProxy(_configResolveResult!);
+      await ClashFlt2.instance.startSystemProxy(_configResolveResult!);
     } else {
-      await ClashPcFlt.instance.stopSystemProxy();
+      await ClashFlt2.instance.stopSystemProxy();
     }
     setState(() {
       _changingClashState = false;
@@ -93,11 +93,11 @@ class _HomeViewState extends State<HomeView> {
   Timer? _trafficUpdating;
 
   ///
-  /// traffic updating can be called before [ClashPcFlt.instance.init]
+  /// traffic updating can be called before [ClashFlt2.instance.init]
   ///
   _startTrafficUpdating() {
     _trafficUpdating = Timer.periodic(const Duration(seconds: 1), (timer) {
-      ClashPcFlt.instance.updateTraffic();
+      ClashFlt2.instance.updateTraffic();
     });
   }
 
@@ -111,7 +111,7 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   void initState() {
-    ClashPcFlt.instance.init();
+    ClashFlt2.instance.init();
     _startTrafficUpdating();
     super.initState();
   }
@@ -148,7 +148,7 @@ class _HomeViewState extends State<HomeView> {
           ),
           _buildStringListTile(
             context,
-            title: "3. ClashPcFlt.instance.setConfig",
+            title: "3. ClashFlt2.instance.setConfig",
             subtitle: """
 port: ${_configResolveResult?.httpPort ?? "No config set"}
 socks-port: ${_configResolveResult?.socksPort ?? "No config set"}
@@ -159,18 +159,17 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
           ),
           _buildStringListTile(
             context,
-            title: "4. ClashPcFlt.instance.selectProxy",
+            title: "4. ClashFlt2.instance.selectProxy",
             subtitle: _proxySelection == null
                 ? null
                 : "${_proxySelection!.group.name}/${_proxySelection!.proxy}",
             onTap: _configResolveResult == null ? null : _selectProxy,
           ),
           ValueListenableBuilder(
-            valueListenable: ClashPcFlt.instance.systemProxyEnabled,
+            valueListenable: ClashFlt2.instance.systemProxyEnabled,
             builder: (context, systemProxyEnabled, widget) {
               return SwitchListTile(
-                title:
-                    const Text("5. ClashPcFlt.instance.startClash/stopClash"),
+                title: const Text("5. ClashFlt2.instance.startClash/stopClash"),
                 value: systemProxyEnabled,
                 onChanged: _changingClashState
                     ? null
@@ -181,10 +180,10 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
             },
           ),
           ListTile(
-            title: const Text("6. ClashPcFlt.instance.setTunnelMode"),
+            title: const Text("6. ClashFlt2.instance.setTunnelMode"),
             enabled: _configResolveResult != null,
             subtitle: ValueListenableBuilder(
-              valueListenable: ClashPcFlt.instance.tunnelMode,
+              valueListenable: ClashFlt2.instance.tunnelMode,
               builder: (context, tunnelMode, widget) {
                 return Row(
                   children: TunnelMode.values.map((e) {
@@ -196,7 +195,7 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
                             ? null
                             : (value) {
                                 if (value == null) return;
-                                ClashPcFlt.instance.setTunnelMode(value);
+                                ClashFlt2.instance.setTunnelMode(value);
                               },
                         title: Text(e.name),
                       ),
@@ -207,9 +206,9 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
             ),
           ),
           ListTile(
-            title: const Text("ClashPcFlt.instance.traffic"),
+            title: const Text("ClashFlt2.instance.traffic"),
             subtitle: ValueListenableBuilder(
-              valueListenable: ClashPcFlt.instance.traffic,
+              valueListenable: ClashFlt2.instance.traffic,
               builder: (context, traffic, widget) {
                 return Text(
                   """

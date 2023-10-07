@@ -3,7 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  clash_pc_flt
+  clash_flt2
   proxy_manager
 )
 

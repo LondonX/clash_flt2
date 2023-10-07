@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:clash_pc_flt/clash_pc_flt.dart';
+import 'package:clash_flt2/clash_flt2.dart';
 import 'package:get/get.dart';
 
 class ProxySelectorView extends StatefulWidget {
@@ -44,7 +44,7 @@ class _ProxySelectorViewState extends State<ProxySelectorView>
     for (var group in _displayGroups) {
       allProxies.addAll(group.proxies.map((e) => e.name));
     }
-    await ClashPcFlt.instance.testDelay(allProxies);
+    await ClashFlt2.instance.testDelay(allProxies);
     setState(() {
       _testing = false;
     });
@@ -97,10 +97,10 @@ class _ProxySelectorViewState extends State<ProxySelectorView>
                   return ListTile(
                     title: Text(proxy.name),
                     subtitle: ValueListenableBuilder(
-                      valueListenable: ClashPcFlt.instance.delayOf(proxy.name),
+                      valueListenable: ClashFlt2.instance.delayOf(proxy.name),
                       builder: (context, delay, child) {
                         return Text(
-                          "ClashPcFlt.instance.delayOf(proxy.name): $delay",
+                          "ClashFlt2.instance.delayOf(proxy.name): $delay",
                           style: TextStyle(
                             color: delay == -1
                                 ? Colors.red

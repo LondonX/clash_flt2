@@ -1,6 +1,6 @@
-# clash_pc_flt_example
+# clash_flt2_example
 
-Demonstrates how to use the clash_pc_flt plugin.
+Demonstrates how to use the clash_flt2 plugin.
 
 ## Getting Started
 

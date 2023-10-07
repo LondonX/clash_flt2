@@ -1,9 +1,9 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint clash_pc_flt.podspec` to validate before publishing.
+# Run `pod lib lint clash_flt2.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'clash_pc_flt'
+  s.name             = 'clash_flt2'
   s.version          = '0.0.1'
   s.summary          = 'A new Flutter plugin project.'
   s.description      = <<-DESC

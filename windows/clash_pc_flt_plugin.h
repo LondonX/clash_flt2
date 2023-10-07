@@ -1,24 +1,24 @@
-#ifndef FLUTTER_PLUGIN_CLASH_PC_FLT_PLUGIN_H_
-#define FLUTTER_PLUGIN_CLASH_PC_FLT_PLUGIN_H_
+#ifndef FLUTTER_PLUGIN_clash_flt2_PLUGIN_H_
+#define FLUTTER_PLUGIN_clash_flt2_PLUGIN_H_
 
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
 
 #include <memory>
 
-namespace clash_pc_flt {
+namespace clash_flt2 {
 
-class ClashPcFltPlugin : public flutter::Plugin {
+class ClashFlt2Plugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
 
-  ClashPcFltPlugin();
+  ClashFlt2Plugin();
 
-  virtual ~ClashPcFltPlugin();
+  virtual ~ClashFlt2Plugin();
 
   // Disallow copy and assign.
-  ClashPcFltPlugin(const ClashPcFltPlugin&) = delete;
-  ClashPcFltPlugin& operator=(const ClashPcFltPlugin&) = delete;
+  ClashFlt2Plugin(const ClashFlt2Plugin&) = delete;
+  ClashFlt2Plugin& operator=(const ClashFlt2Plugin&) = delete;
 
   // Called when a method is called on this plugin's channel from Dart.
   void HandleMethodCall(
@@ -26,6 +26,6 @@ class ClashPcFltPlugin : public flutter::Plugin {
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 };
 
-}  // namespace clash_pc_flt
+}  // namespace clash_flt2
 
-#endif  // FLUTTER_PLUGIN_CLASH_PC_FLT_PLUGIN_H_
+#endif  // FLUTTER_PLUGIN_clash_flt2_PLUGIN_H_

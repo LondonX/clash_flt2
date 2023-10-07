@@ -2,7 +2,7 @@ import FlutterMacOS
 import Cocoa
 import XCTest
 
-@testable import clash_pc_flt
+@testable import clash_flt2
 
 // This demonstrates a simple unit test of the Swift portion of this plugin's implementation.
 //
@@ -11,7 +11,7 @@ import XCTest
 class RunnerTests: XCTestCase {
 
   func testGetPlatformVersion() {
-    let plugin = ClashPcFltPlugin()
+    let plugin = ClashFlt2Plugin()
 
     let call = FlutterMethodCall(methodName: "getPlatformVersion", arguments: [])
 

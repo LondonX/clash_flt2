@@ -8,9 +8,9 @@
 #include <string>
 #include <variant>
 
-#include "clash_pc_flt_plugin.h"
+#include "clash_flt2_plugin.h"
 
-namespace clash_pc_flt {
+namespace clash_flt2 {
 namespace test {
 
 namespace {
@@ -22,8 +22,8 @@ using flutter::MethodResultFunctions;
 
 }  // namespace
 
-TEST(ClashPcFltPlugin, GetPlatformVersion) {
-  ClashPcFltPlugin plugin;
+TEST(ClashFlt2Plugin, GetPlatformVersion) {
+  ClashFlt2Plugin plugin;
   // Save the reply value from the success callback.
   std::string result_string;
   plugin.HandleMethodCall(
@@ -40,4 +40,4 @@ TEST(ClashPcFltPlugin, GetPlatformVersion) {
 }
 
 }  // namespace test
-}  // namespace clash_pc_flt
+}  // namespace clash_flt2

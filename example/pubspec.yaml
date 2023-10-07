@@ -1,5 +1,5 @@
-name: clash_pc_flt_example
-description: Demonstrates how to use the clash_pc_flt plugin.
+name: clash_flt2_example
+description: Demonstrates how to use the clash_flt2 plugin.
 publish_to: "none"
 
 environment:
@@ -11,10 +11,10 @@ dependencies:
   get:
   path_provider:
   network_tools: # get port occupying status
-  yaml: # resolve port out of ClashPcFlt for using `network_tools`
+  yaml: # resolve port out of ClashFlt2 for using `network_tools`
   flutter_emoji: # fix `yaml` unsupported emoji problem
 
-  clash_pc_flt:
+  clash_flt2:
     path: ../
 
   cupertino_icons: ^1.0.2

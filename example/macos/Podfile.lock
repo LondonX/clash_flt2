@@ -1,5 +1,5 @@
 PODS:
-  - clash_pc_flt (0.0.1):
+  - clash_flt2 (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - path_provider_foundation (0.0.1):
@@ -9,14 +9,14 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
-  - clash_pc_flt (from `Flutter/ephemeral/.symlinks/plugins/clash_pc_flt/macos`)
+  - clash_flt2 (from `Flutter/ephemeral/.symlinks/plugins/clash_flt2/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
   - proxy_manager (from `Flutter/ephemeral/.symlinks/plugins/proxy_manager/macos`)
 
 EXTERNAL SOURCES:
-  clash_pc_flt:
-    :path: Flutter/ephemeral/.symlinks/plugins/clash_pc_flt/macos
+  clash_flt2:
+    :path: Flutter/ephemeral/.symlinks/plugins/clash_flt2/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
   path_provider_foundation:
@@ -25,7 +25,7 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/proxy_manager/macos
 
 SPEC CHECKSUMS:
-  clash_pc_flt: 5048209145558a1319402ed17b867cc1feeca6ee
+  clash_flt2: f0fb8f41de748008727a0111e28267cdb13a8184
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   path_provider_foundation: 29f094ae23ebbca9d3d0cec13889cd9060c0e943
   proxy_manager: 542f2521a9ade938bfdd8a2ff566d95515fa7f2c

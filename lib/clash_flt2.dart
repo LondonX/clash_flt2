@@ -21,8 +21,8 @@ export 'entity/clash_traffic.dart';
 late NativeLibrary clashFFI;
 const mobileChannel = MethodChannel("FClashPlugin");
 
-class ClashPcFlt {
-  static final instance = ClashPcFlt._();
+class ClashFlt2 {
+  static final instance = ClashFlt2._();
 
   final _proxyManager = ProxyManager();
 
@@ -50,7 +50,7 @@ class ClashPcFlt {
     return _delayPool[proxyName] ??= ValueNotifier(-1);
   }
 
-  ClashPcFlt._();
+  ClashFlt2._();
 
   ///
   /// load libs
@@ -285,7 +285,7 @@ class ClashPcFlt {
 _log(Object? object) {
   if (kReleaseMode) return;
   // ignore: avoid_print
-  print("[ClashPcFlt]$object");
+  print("[ClashFlt2]$object");
 }
 
 extension _Ext<T> on T {

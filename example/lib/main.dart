@@ -1,4 +1,4 @@
-import 'package:clash_pc_flt_example/home_view.dart';
+import 'package:clash_flt2_example/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

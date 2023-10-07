@@ -1,4 +1,4 @@
-#include "clash_pc_flt_plugin.h"
+#include "clash_flt2_plugin.h"
 
 // This must be included before many other Windows headers.
 #include <windows.h>
@@ -13,17 +13,17 @@
 #include <memory>
 #include <sstream>
 
-namespace clash_pc_flt {
+namespace clash_flt2 {
 
 // static
-void ClashPcFltPlugin::RegisterWithRegistrar(
+void ClashFlt2Plugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
   auto channel =
       std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          registrar->messenger(), "clash_pc_flt",
+          registrar->messenger(), "clash_flt2",
           &flutter::StandardMethodCodec::GetInstance());
 
-  auto plugin = std::make_unique<ClashPcFltPlugin>();
+  auto plugin = std::make_unique<ClashFlt2Plugin>();
 
   channel->SetMethodCallHandler(
       [plugin_pointer = plugin.get()](const auto &call, auto result) {
@@ -33,11 +33,11 @@ void ClashPcFltPlugin::RegisterWithRegistrar(
   registrar->AddPlugin(std::move(plugin));
 }
 
-ClashPcFltPlugin::ClashPcFltPlugin() {}
+ClashFlt2Plugin::ClashFlt2Plugin() {}
 
-ClashPcFltPlugin::~ClashPcFltPlugin() {}
+ClashFlt2Plugin::~ClashFlt2Plugin() {}
 
-void ClashPcFltPlugin::HandleMethodCall(
+void ClashFlt2Plugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   if (method_call.method_name().compare("getPlatformVersion") == 0) {
@@ -56,4 +56,4 @@ void ClashPcFltPlugin::HandleMethodCall(
   }
 }
 
-}  // namespace clash_pc_flt
+}  // namespace clash_flt2

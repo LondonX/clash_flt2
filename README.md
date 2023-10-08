@@ -47,17 +47,7 @@ dart run ffigen
     ```
 
 ## Android
-* Move `libclash.so` files into `src/main/jniLibs`(create if not exists) directory, like this
-    ```
-    app/
-    └── src/
-        └── main/
-            └── jniLibs/
-                ├── arm64-v8a/
-                │   └── libclash.so
-                └── armeabi-v7a/
-                    └── libclash.so
-    ```
+* Set `minSdkVersion` to `19` in app-level `build.gradle`.
 * Modify app-level `build.gradle`
     ```gradle
     android {

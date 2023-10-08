@@ -4,6 +4,7 @@ import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:clash_flt2/mobile_helper.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +26,8 @@ class ClashFlt2 {
   static final instance = ClashFlt2._();
 
   final _proxyManager = ProxyManager();
+  late final _mobileHelper =
+      _isMobile ? MobileHelper(systemProxyEnabled: systemProxyEnabled) : null;
 
   final _logReceiver = ReceivePort();
   late final logStream = _logReceiver.asBroadcastStream();
@@ -56,6 +59,7 @@ class ClashFlt2 {
   /// load libs
   ///
   void init() {
+    _mobileHelper?.init();
     final String libFileName;
     if (Platform.isWindows) {
       libFileName = "libclash.dll";
@@ -74,13 +78,17 @@ class ClashFlt2 {
   /// init clash and set configs
   ///
   ClashConfigResolveResult? setConfig(File yamlFile, Directory clashHome) {
-    ///
-    /// Android / iOS needs a dummy Clash running on App for profile resolving and delay testing
-    /// while a functionality Clash for tunnelling should be running on VpnService (Android) and NetworkExtension (iOS).
-    ///
     final File targetYamlFile;
-    if (Platform.isAndroid || Platform.isIOS) {
-      final dummyYaml = yamlFile.readAsStringSync().replaceGeneralConfigValue({
+    final Map<String, dynamic>? trueYamlGeneral;
+
+    ///
+    /// only iOS must run clash in fully isolated system process (NetworkExtension)
+    /// TODO need a IOSHelper
+    ///
+    if (Platform.isIOS) {
+      final yaml = yamlFile.readAsStringSync();
+      trueYamlGeneral = yaml.resolveGeneralConfigs();
+      final dummyYaml = yaml.replaceGeneralConfigValue({
         "port": 0,
         "socks-port": 0,
         "redir-port": 0,
@@ -93,6 +101,7 @@ class ClashFlt2 {
       targetYamlFile.writeAsStringSync(dummyYaml.toString(), flush: true);
     } else {
       targetYamlFile = yamlFile;
+      trueYamlGeneral = null;
     }
 
     clashFFI.set_config(targetYamlFile.path.toNativeUtf8().cast());
@@ -107,10 +116,14 @@ class ClashFlt2 {
     final mode = _findTunnelMode(modeString);
     assert(mode != null, "mode is not the one of enum TunnelMode.");
     tunnelMode.value = mode!;
+    //TODO send config and mode to IOSHelper
     return ClashConfigResolveResult(
-      httpPort: (configs["port"] as int).takeIf((v) => v != 0),
-      socksPort: (configs["socks-port"] as int).takeIf((v) => v != 0),
-      mixedPort: (configs["mixed-port"] as int).takeIf((v) => v != 0),
+      httpPort:
+          ((trueYamlGeneral ?? configs)["port"] as int?).takeIf((v) => v != 0),
+      socksPort: ((trueYamlGeneral ?? configs)["socks-port"] as int?)
+          .takeIf((v) => v != 0),
+      mixedPort: ((trueYamlGeneral ?? configs)["mixed-port"] as int?)
+          .takeIf((v) => v != 0),
       proxyGroups: buildProxyGroups(proxies),
     );
   }
@@ -119,20 +132,29 @@ class ClashFlt2 {
   /// select proxy group and proxy
   ///
   bool selectProxy(String groupName, String proxyName) {
-    final ret = clashFFI.change_proxy(
-        groupName.toNativeUtf8().cast(), proxyName.toNativeUtf8().cast());
-    return ret == 0;
+    final ret = 0 ==
+        clashFFI.change_proxy(
+            groupName.toNativeUtf8().cast(), proxyName.toNativeUtf8().cast());
+    if (ret) {
+      //TODO send selected proxy to IOSHelper
+    }
+    return ret;
   }
 
   ///
   /// start system proxy
+  /// return true if start successful
   ///
   Future<bool> startSystemProxy(
-      ClashConfigResolveResult configResolveResult) async {
+    ClashConfigResolveResult configResolveResult,
+  ) async {
     final hPort = configResolveResult.httpPort ?? configResolveResult.mixedPort;
     final sPort =
         configResolveResult.socksPort ?? configResolveResult.mixedPort;
     try {
+      if (_isMobile) {
+        return await _mobileHelper!.startService(hPort ?? 0, sPort ?? 0);
+      }
       await Future.wait([
         if (hPort != null)
           _proxyManager.setAsSystemProxy(
@@ -168,6 +190,10 @@ class ClashFlt2 {
   /// stop system proxy
   ///
   Future<void> stopSystemProxy() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      await _mobileHelper?.stopService();
+      return;
+    }
     await _proxyManager.cleanSystemProxy();
     systemProxyEnabled.value = (false);
   }
@@ -182,6 +208,7 @@ class ClashFlt2 {
     final resultString = clashFFI.get_tun_mode().cast<Utf8>().toDartString();
     final result = _findTunnelMode(resultString);
     assert(result != null, "mode is not the one of enum TunnelMode.");
+    //TODO send mode to IOSHelper
     tunnelMode.value = result!;
   }
 
@@ -332,3 +359,5 @@ TunnelMode? _findTunnelMode(String? mode) {
   }
   return null;
 }
+
+final _isMobile = Platform.isAndroid || Platform.isIOS;

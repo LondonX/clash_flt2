@@ -50,4 +50,27 @@ extension ClashConfigExt on String {
     }
     return lines.join('\n');
   }
+
+  Map<String, dynamic> resolveGeneralConfigs() {
+    Map<String, dynamic> result = {};
+    List<String> lines = split('\n');
+    for (String line in lines) {
+      if (line.startsWith(" ")) continue;
+      List<String> parts = line.split(': ');
+      if (parts.length == 2) {
+        final key = parts[0].trim();
+        final value = parts[1].trim();
+        final intV = int.tryParse(value);
+        result[key] = intV ?? value;
+      }
+    }
+    return result;
+  }
+
+  Map<String, String> resolveInitArg() {
+    final index = indexOf(":");
+    return {
+      substring(0, index): substring(index + 1),
+    };
+  }
 }

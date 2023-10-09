@@ -28,8 +28,8 @@ flutter:
       android:
         package: com.LondonX.clash_flt2
         pluginClass: ClashFlt2Plugin
-      # ios:
-      #   pluginClass: ClashFlt2Plugin
+      ios:
+        pluginClass: ClashFlt2Plugin
 ffigen:
   output: "lib/ffi/generated_bindings.dart"
   headers:

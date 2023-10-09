@@ -63,8 +63,10 @@ class ClashFlt2 {
     final String libFileName;
     if (Platform.isWindows) {
       libFileName = "libclash.dll";
-    } else if (Platform.isMacOS || Platform.isIOS) {
+    } else if (Platform.isMacOS) {
       libFileName = "libclash.dylib";
+    } else if (Platform.isIOS) {
+      libFileName = "libclash-ios.dylib";
     } else {
       // Android / Linux
       libFileName = "libclash.so";
@@ -85,7 +87,8 @@ class ClashFlt2 {
     /// only iOS must run clash in fully isolated system process (NetworkExtension)
     /// TODO need a IOSHelper
     ///
-    if (Platform.isIOS) {
+    //TODO remove fuchsia
+    if (Platform.isFuchsia) {
       final yaml = yamlFile.readAsStringSync();
       trueYamlGeneral = yaml.resolveGeneralConfigs();
       final dummyYaml = yaml.replaceGeneralConfigValue({

@@ -31,15 +31,15 @@ dart run ffigen
 
 # Platform works
 ## Mac OS
-* Add `libclash.dylib` into `Runner/Frameworks` (you can uncheck `Copy items if needed` if you want).
-* Set to `Embed & Sign` of `libclash.dylib` in `TARGETS > Runner > General > Frameworks, Libraries, and Embedded content`.
-* Add `libclash.dylib` into `TARGETS > Runner > Build Phases > Copy Bundle Resources`.
-* Change the status of `libclash.dylib` into `Optional` in `TARGETS > Runner > Build Phases > Link Binary With Libraries`.
-* Add path which `libclash.dylib` can be found at (typically `$(PROJECT_DIR)/../fclash/dist`) into `TARGETS > Runner > Build Settings > Search Paths > Library Search Paths`.
-* Remove App sand box in `TARGETS > Signing & Capabilities` if you want to set as system proxy.
+1. Add `libclash.dylib` into `Runner/Frameworks` (you can uncheck `Copy items if needed` if you want).
+2. Set to `Embed & Sign` of `libclash.dylib` in `TARGETS > Runner > General > Frameworks, Libraries, and Embedded content`.
+3. Add `libclash.dylib` into `TARGETS > Runner > Build Phases > Copy Bundle Resources`.
+4. Change the status of `libclash.dylib` into `Optional` in `TARGETS > Runner > Build Phases > Link Binary With Libraries`.
+5. Add path which `libclash.dylib` can be found at (typically `$(PROJECT_DIR)/../fclash/dist`) into `TARGETS > Runner > Build Settings > Search Paths > Library Search Paths`.
+6. Remove App sand box in `TARGETS > Signing & Capabilities` if you want to set as system proxy.
 
 ## Windows
-* Add these into `windows/CMakeList.txt`, the `PATH_TO_LIBCLASH.DLL` typically is `../fclash/dist/libclash.dll`.
+1. Add these into `windows/CMakeList.txt`, the `PATH_TO_LIBCLASH.DLL` typically is `../fclash/dist/libclash.dll`.
     ```cmake
     # Install libclash
     install(FILES "PATH_TO_LIBCLASH.DLL" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
@@ -47,8 +47,8 @@ dart run ffigen
     ```
 
 ## Android
-* Set `minSdkVersion` to `19` in app-level `build.gradle`.
-* Modify app-level `build.gradle`
+1. Set `minSdkVersion` to `19` in app-level `build.gradle`.
+2. Modify app-level `build.gradle`
     ```gradle
     android {
         defaultConfig {
@@ -60,3 +60,7 @@ dart run ffigen
         // ...
     }
     ```
+
+## iOS
+1. Same step 1~5 of `Mac OS` with `libclash-ios.dylib` file.
+2. Set `TARGETS > Runner > General > Minimum Developments` >= `15.0`

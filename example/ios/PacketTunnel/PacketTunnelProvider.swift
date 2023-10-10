@@ -7,6 +7,7 @@
 
 import Foundation
 import NetworkExtension
+import Tun2SocksKit
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
     let libClash = ClashBridge()
@@ -30,6 +31,20 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         if (port != 0) {
             try await self.setTunnelNetworkSettings(initHttpSettings(port))
         }
+        if (socksPort != 0) {
+            // start TUN
+            Task.init {
+                let tunConfigFile = saveTunnelConfigToFile(socksPort: socksPort)
+                let tunConfig = try! String(contentsOf: tunConfigFile, encoding: .utf8)
+                NSLog("[PacketTunel]starting socks tun with config: \(tunConfig)")
+                let ret = Socks5Tunnel.run(withConfig: tunConfigFile.path)
+                NSLog("[PacketTunel]socks tun finished with code: \(ret)")
+            }
+        }
+    }
+
+    override func stopTunnel(with reason: NEProviderStopReason) async {
+        Socks5Tunnel.quit()
     }
     
     override func handleAppMessage(_ data: Data) async -> Data? {
@@ -124,4 +139,35 @@ private func initHttpSettings(_ port: Int) -> NEPacketTunnelNetworkSettings {
         return settings
     }()
     return settings
+}
+
+private func saveTunnelConfigToFile(socksPort: Int) -> URL {
+    let content = """
+    tunnel:
+      mtu: 9000
+
+    socks5:
+      port: \(socksPort)
+      address: ::1
+      udp: 'udp'
+
+    misc:
+      task-stack-size: 20480
+      connect-timeout: 5000
+      read-write-timeout: 60000
+      log-file: stderr
+      log-level: info
+      limit-nofile: 65535
+    """
+    if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+        let fileURL = documentsDirectory.appendingPathComponent("tunnel_config.yaml")
+        do {
+            try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            return fileURL
+        } catch {
+            fatalError("Error writing to file: \(error)")
+        }
+    } else {
+        fatalError("Error finding the documents directory.")
+    }
 }

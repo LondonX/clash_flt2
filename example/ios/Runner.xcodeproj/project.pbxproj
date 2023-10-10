@@ -15,6 +15,7 @@
 		858407422AD2AEDD00BFED5E /* libclash-ios.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 858407412AD2AEDD00BFED5E /* libclash-ios.dylib */; settings = {ATTRIBUTES = (Weak, ); }; };
 		858407432AD2AEE500BFED5E /* libclash-ios.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 858407412AD2AEDD00BFED5E /* libclash-ios.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		858407442AD2AEEE00BFED5E /* libclash-ios.dylib in Resources */ = {isa = PBXBuildFile; fileRef = 858407412AD2AEDD00BFED5E /* libclash-ios.dylib */; };
+		85991B9A2AD4F244006C068E /* Tun2SocksKit in Frameworks */ = {isa = PBXBuildFile; productRef = 85991B992AD4F244006C068E /* Tun2SocksKit */; };
 		85BBD4202AD3D363000E2442 /* ClashBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BBD41F2AD3D363000E2442 /* ClashBridge.swift */; };
 		85FDC52F2AD3A1BB0077E235 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 85FDC52E2AD3A1BB0077E235 /* NetworkExtension.framework */; };
 		85FDC5322AD3A1BC0077E235 /* PacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FDC5312AD3A1BC0077E235 /* PacketTunnelProvider.swift */; };
@@ -106,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				85991B9A2AD4F244006C068E /* Tun2SocksKit in Frameworks */,
 				85FDC52F2AD3A1BB0077E235 /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -258,6 +260,9 @@
 			dependencies = (
 			);
 			name = PacketTunnel;
+			packageProductDependencies = (
+				85991B992AD4F244006C068E /* Tun2SocksKit */,
+			);
 			productName = PacketTunnel;
 			productReference = 85FDC52D2AD3A1BB0077E235 /* PacketTunnel.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -319,6 +324,9 @@
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
+			packageReferences = (
+				85991B982AD4F244006C068E /* XCRemoteSwiftPackageReference "Tun2SocksKit" */,
+			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -1005,6 +1013,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		85991B982AD4F244006C068E /* XCRemoteSwiftPackageReference "Tun2SocksKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/arror/Tun2SocksKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		85991B992AD4F244006C068E /* Tun2SocksKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 85991B982AD4F244006C068E /* XCRemoteSwiftPackageReference "Tun2SocksKit" */;
+			productName = Tun2SocksKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;
 }

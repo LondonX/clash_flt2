@@ -85,10 +85,8 @@ class ClashFlt2 {
 
     ///
     /// only iOS must run clash in fully isolated system process (NetworkExtension)
-    /// TODO need a IOSHelper
     ///
-    //TODO remove fuchsia
-    if (Platform.isFuchsia) {
+    if (Platform.isIOS) {
       final yaml = yamlFile.readAsStringSync();
       trueYamlGeneral = yaml.resolveGeneralConfigs();
       final dummyYaml = yaml.replaceGeneralConfigValue({
@@ -97,6 +95,7 @@ class ClashFlt2 {
         "redir-port": 0,
         "tproxy-port": 0,
         "mixed-port": 0,
+        "external-controller": "",
       });
       targetYamlFile = File(
         "${yamlFile.parent.path}${Platform.pathSeparator}dummyProfile.yaml",
@@ -119,7 +118,8 @@ class ClashFlt2 {
     final mode = _findTunnelMode(modeString);
     assert(mode != null, "mode is not the one of enum TunnelMode.");
     tunnelMode.value = mode!;
-    //TODO send config and mode to IOSHelper
+    _mobileHelper?.setConfig(yamlFile, clashHome);
+    _mobileHelper?.setMode(mode);
     return ClashConfigResolveResult(
       httpPort:
           ((trueYamlGeneral ?? configs)["port"] as int?).takeIf((v) => v != 0),
@@ -139,7 +139,7 @@ class ClashFlt2 {
         clashFFI.change_proxy(
             groupName.toNativeUtf8().cast(), proxyName.toNativeUtf8().cast());
     if (ret) {
-      //TODO send selected proxy to IOSHelper
+      _mobileHelper?.selectProxy(groupName, proxyName);
     }
     return ret;
   }
@@ -211,7 +211,9 @@ class ClashFlt2 {
     final resultString = clashFFI.get_tun_mode().cast<Utf8>().toDartString();
     final result = _findTunnelMode(resultString);
     assert(result != null, "mode is not the one of enum TunnelMode.");
-    //TODO send mode to IOSHelper
+    assert(result == mode,
+        "mode is not supported by clash core. resultString: $resultString");
+    _mobileHelper?.setMode(result!);
     tunnelMode.value = result!;
   }
 
@@ -246,8 +248,9 @@ class ClashFlt2 {
   ///
   /// get traffic through clash
   ///
-  void updateTraffic() {
-    String trafficJson = clashFFI.get_traffic().cast<Utf8>().toDartString();
+  Future<void> updateTraffic() async {
+    String trafficJson = await _mobileHelper?.getTrafficIos() ??
+        clashFFI.get_traffic().cast<Utf8>().toDartString();
     final json = jsonDecode(trafficJson);
     final currentUp = json["Up"] as int;
     final currentDown = json["Down"] as int;

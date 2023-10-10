@@ -64,3 +64,20 @@ dart run ffigen
 ## iOS
 1. Same step 1~5 of `Mac OS` with `libclash-ios.dylib` file.
 2. Set `TARGETS > Runner > General > Minimum Developments` >= `15.0`
+3. Create a Target named `PacketTunnel`, the XCode will auto create a file named `PacketTunnelProvider.swift`.
+4. Modify `PacketTunnelProvider.swift` by paste from [Example's PacketTunnelProvider.swfit](example/ios/PacketTunnel/PacketTunnelProvider.swift)
+5. Copy `ClashBridge.swift` from [Example's ClashBridge.swfit](example/ios/PacketTunnel/ClashBridge.swift)
+6. Add `Network Extension` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.
+    * Check `Packet Tunnel`.
+7. Add `App Groups` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.
+    * Check `group.<yourBundleId>`
+
+**Some features on iOS may be difference to other platform**  
+**because Clash must be running on `Network Extensions`**  
+**so I made a dummy Clash running on App for yaml resolving, delay testing, and a true Clash running on Network Extension for packet tunneling**  
+
+**unsupported features**
+- [ ] startLog/stopLog
+- [ ] getConnection
+- [ ] closeConnection
+- [ ] closeAllConnection  

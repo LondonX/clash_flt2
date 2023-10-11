@@ -85,3 +85,7 @@ dart run ffigen
 - [ ] getConnection
 - [ ] closeConnection
 - [ ] closeAllConnection  
+
+## FAQ
+### iOS build error: Cycle inside Runner; building could produce unreliable results.
+* Mode `Embed Foundation Extensions` above to `Run Script` in `Runner`'s `Build Phases`.

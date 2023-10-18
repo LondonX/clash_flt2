@@ -1,5 +1,5 @@
-# Clash PC for flutter
-A Flutter plugin of Clash, support Mac OS and Windows.  
+# Clash for flutter
+A Flutter plugin of Clash, support Windows/Mac/Android/iOS.  
 
 Extract clash core from [FClash](https://github.com/Fclash/Fclash).  
 Using [ffigen](https://pub.dev/packages/ffigen) to create bridge tween clash core and dart.  

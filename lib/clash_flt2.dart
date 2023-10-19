@@ -197,8 +197,9 @@ class ClashFlt2 {
       await _mobileHelper?.stopService();
       return;
     }
+    if (!systemProxyEnabled.value) return;
     await _proxyManager.cleanSystemProxy();
-    systemProxyEnabled.value = (false);
+    systemProxyEnabled.value = false;
   }
 
   ///

@@ -77,7 +77,7 @@ public final class VPNManager: ObservableObject {
         config.disconnectOnSleep = false
         config.providerConfiguration = [:]
         config.excludeLocalNetworks = true
-        config.includeAllNetworks = true
+//        config.includeAllNetworks = true
         manager.protocolConfiguration = config
         manager.isEnabled = true
         manager.isOnDemandEnabled = true

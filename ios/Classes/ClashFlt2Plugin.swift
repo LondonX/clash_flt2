@@ -30,15 +30,13 @@ public class ClashFlt2Plugin: NSObject, FlutterPlugin {
                 modifiedArgs["yamlFile"] = sharedYamlFile as NSObject
                 modifiedArgs["clashHome"] = sharedClashHome as NSObject
                 do {
-                    var controller = await vpnManager.loadController()
+                    try await vpnManager.installVPNConfiguration()
+                    let controller = await vpnManager.loadController()
                     if(controller == nil) {
-                        try await vpnManager.installVPNConfiguration()
-                        controller = await vpnManager.loadController()
-                        if(controller == nil) {
-                            result(false)
-                            return
-                        }
+                        result(false)
+                        return
                     }
+                    try await Task.sleep(nanoseconds: 100_000_000)//0.1s
                     try await controller?.startVPN(args: modifiedArgs)
                 } catch {
                     result(false)

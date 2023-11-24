@@ -68,7 +68,7 @@ dart run ffigen
 4. Modify the `PacketTunnel`
     * Modify `PacketTunnelProvider.swift` by paste from [Example's PacketTunnelProvider.swfit](example/ios/PacketTunnel/PacketTunnelProvider.swift)
     * Copy `ClashBridge.swift` from [Example's ClashBridge.swfit](example/ios/PacketTunnel/ClashBridge.swift)
-    * Add `Tun2SocksKit-main` by `Swift Package Manager (SPM)` from https://github.com/arror/Tun2SocksKit or `<project-root>/ios/Tun2SocksKit-main`.
+    * Add `Tun2SocksKit-main` by `Swift Package Manager (SPM)` from https://github.com/EbrahimTahernejad/Tun2SocksKit or `<project-root>/ios/Tun2SocksKit-main`.
     * Add `Tun2SocksKit` lib into `Frameworks and Libraries` of `PacketTunnel` target.
     * (Optional) Add `HevSocks5Tunnel.xcframework`
 5. Add `Network Extension` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.

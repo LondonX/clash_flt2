@@ -246,6 +246,12 @@ class ClashFlt2 {
   var _totalUp = 0;
   var _totalDown = 0;
 
+  void resetTraffic() {
+    _totalUp = 0;
+    _totalDown = 0;
+    traffic.value = ClashTraffic.zero;
+  }
+
   ///
   /// get traffic through clash
   ///

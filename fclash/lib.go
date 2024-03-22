@@ -1,9 +1,5 @@
-package main
+package fclash
 
-/*
-#include "stdint.h"
-*/
-import "C"
 import (
 	"context"
 	"encoding/json"
@@ -11,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"unsafe"
 
 	"github.com/Dreamacro/clash/adapter"
 	"github.com/Dreamacro/clash/adapter/outboundgroup"
@@ -26,19 +21,22 @@ import (
 	"github.com/Dreamacro/clash/log"
 	"github.com/Dreamacro/clash/tunnel"
 	"github.com/Dreamacro/clash/tunnel/statistic"
-	fclashgobridge "github.com/kingtous/fclash-go-bridge"
 )
+
+type Client interface {
+	Log(message string)
+	DelayUpdate(name string, delay int64)
+}
 
 var (
 	options        []hub.Option
 	log_subscriber observable.Subscription
+	client Client
 )
 
-//export clash_init
-func clash_init(home_dir *C.char) int {
-	home := C.GoString(home_dir)
-	// constant.
-	err := config.Init(home)
+func ClashInit(home_dir string, c Client) int {
+	client = c
+	err := config.Init(home_dir)
 	if err != nil {
 		fmt.Println("clash init failed:", err)
 		return -1
@@ -46,24 +44,20 @@ func clash_init(home_dir *C.char) int {
 	return 0
 }
 
-//export set_config
-func set_config(config_path *C.char) int {
-	file := C.GoString(config_path)
-	if _, err := executor.ParseWithPath(file); err != nil {
+func SetConfig(config_path string) int {
+	if _, err := executor.ParseWithPath(config_path); err != nil {
 		fmt.Println("config validate failed:", err)
 		return -1
 	}
-	constant.SetConfig(file)
+	constant.SetConfig(config_path)
 	return 0
 }
 
-//export set_home_dir
-func set_home_dir(home *C.char) int {
-	home_gostr := C.GoString(home)
-	info, err := os.Stat(home_gostr)
+func SetHomeDir(home string) int {
+	info, err := os.Stat(home)
 	if err == nil && info.IsDir() {
-		fmt.Println("GO: set home dir to", home_gostr)
-		constant.SetHomeDir(home_gostr)
+		fmt.Println("GO: set home dir to", home)
+		constant.SetHomeDir(home)
 		return 0
 	} else {
 		if err != nil {
@@ -73,45 +67,39 @@ func set_home_dir(home *C.char) int {
 	return -1
 }
 
-//export get_config
-func get_config() *C.char {
-	return C.CString(constant.Path.Config())
+func GetConfig() string {
+	return constant.Path.Config()
 }
 
-//export set_ext_controller
-func set_ext_controller(port uint64) int {
-	url := "127.0.0.1:" + strconv.FormatUint(port, 10)
+func SetExtController(port int) int {
+	url := "127.0.0.1:" + strconv.FormatUint(uint64(port), 10)
 	options = append(options, hub.WithExternalController(url))
 	return 0
 }
 
-//export clear_ext_options
-func clear_ext_options() {
+func ClearExtOptions() {
 	options = options[:0]
 }
 
-//export is_config_valid
-func is_config_valid(config_path *C.char) int {
-	if _, err := executor.ParseWithPath(C.GoString(config_path)); err != nil {
+func IsConfigValid(config_path string) int {
+	if _, err := executor.ParseWithPath(config_path); err != nil {
 		fmt.Println("error reading config:", err)
 		return -1
 	}
 	return 0
 }
 
-//export get_all_connections
-func get_all_connections() *C.char {
+func GetAllConnections() string {
 	snapshot := statistic.DefaultManager.Snapshot()
 	data, err := json.Marshal(snapshot)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return C.CString("")
+		return ""
 	}
-	return C.CString(string(data))
+	return string(data)
 }
 
-//export close_all_connections
-func close_all_connections() {
+func CloseAllConnections() {
 	for _, connection := range statistic.DefaultManager.Snapshot().Connections {
 		err := connection.Close()
 		if err != nil {
@@ -120,9 +108,8 @@ func close_all_connections() {
 	}
 }
 
-//export close_connection
-func close_connection(id *C.char) bool {
-	connection_id := C.GoString(id)
+func CloseConnection(id string) bool {
+	connection_id := id
 	for _, connection := range statistic.DefaultManager.Snapshot().Connections {
 		if connection.ID() == connection_id {
 			err := connection.Close()
@@ -135,8 +122,7 @@ func close_connection(id *C.char) bool {
 	return false
 }
 
-//export parse_options
-func parse_options() bool {
+func ParseOptions() bool {
 	err := hub.Parse(options...)
 	if err != nil {
 		return true
@@ -144,8 +130,7 @@ func parse_options() bool {
 	return false
 }
 
-//export get_traffic
-func get_traffic() *C.char {
+func GetTraffic() string {
 	up, down := statistic.DefaultManager.Now()
 	traffic := map[string]int64{
 		"Up":   up,
@@ -154,18 +139,12 @@ func get_traffic() *C.char {
 	data, err := json.Marshal(traffic)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return C.CString("")
+		return ""
 	}
-	return C.CString(string(data))
+	return string(data)
 }
 
-//export init_native_api_bridge
-func init_native_api_bridge(api unsafe.Pointer) {
-	fclashgobridge.InitDartApi(api)
-}
-
-//export start_log
-func start_log(port C.longlong) {
+func StartLog() {
 	if log_subscriber != nil {
 		log.UnSubscribe(log_subscriber)
 		log_subscriber = nil
@@ -179,14 +158,15 @@ func start_log(port C.longlong) {
 				fmt.Println("Error:", err)
 			}
 			ret_str := string(data)
-			fclashgobridge.SendToPort(int64(port), ret_str)
+			fmt.Println("ClashLog:", ret_str)
+			if client != nil {
+				client.Log(ret_str)
+			}
 		}
 	}()
-	fmt.Println("[GO] subscribe logger on dart bridge port", int64(port))
 }
 
-//export stop_log
-func stop_log() {
+func StopLog() {
 	if log_subscriber != nil {
 		log.UnSubscribe(log_subscriber)
 		fmt.Println("Logger stopped")
@@ -194,25 +174,24 @@ func stop_log() {
 	}
 }
 
-//export change_proxy
-func change_proxy(selector_name *C.char, proxy_name *C.char) C.long {
+func ChangeProxy(selector_name string, proxy_name string) int64 {
 	proxies := tunnel.Proxies()
-	proxy := proxies[C.GoString(selector_name)]
+	proxy := proxies[selector_name]
 	if proxy == nil {
-		return C.long(-1)
+		return -1
 	}
 	adapter_proxy := proxy.(*adapter.Proxy)
 	selector, ok := adapter_proxy.ProxyAdapter.(*outboundgroup.Selector)
 	if !ok {
 		// not selector
-		return C.long(-1)
+		return -1
 	}
-	if err := selector.Set(C.GoString(proxy_name)); err != nil {
+	if err := selector.Set(proxy_name); err != nil {
 		fmt.Println("", err)
-		return C.long(-1)
+		return -1
 	}
-	cachefile.Cache().SetSelected(string(C.GoString(selector_name)), string(C.GoString(proxy_name)))
-	return C.long(0)
+	cachefile.Cache().SetSelected(selector_name, proxy_name)
+	return 0
 }
 
 type configSchema struct {
@@ -236,14 +215,11 @@ func pointerOrDefault(p *int, def int) int {
 	return def
 }
 
-//export change_config_field
-func change_config_field(s *C.char) C.long {
-	// todo
+func ChangeConfigField(s string) int64 {
 	general := &configSchema{}
-	json_str := C.GoString(s)
-	if err := json.Unmarshal([]byte(json_str), general); err != nil {
+	if err := json.Unmarshal([]byte(s), general); err != nil {
 		fmt.Println(err)
-		return C.long(-1)
+		return -1
 	}
 	// copy from clash source code
 	if general.AllowLan != nil {
@@ -263,7 +239,6 @@ func change_config_field(s *C.char) C.long {
 
 	tcpIn := tunnel.TCPIn()
 	udpIn := tunnel.UDPIn()
-	// natTable := tunnel.NatTable()
 	P.ReCreatePortsListeners(*ports, tcpIn, udpIn)
 
 	if general.Mode != nil {
@@ -277,91 +252,65 @@ func change_config_field(s *C.char) C.long {
 	if general.IPv6 != nil {
 		resolver.DisableIPv6 = !*general.IPv6
 	}
-	return C.long(0)
+	return 0
 }
 
-//export async_test_delay
-func async_test_delay(proxy_name *C.char, url *C.char, timeout C.long, port C.longlong) {
+func AsyncTestDelay(proxy_name string, url string, timeout int64) {
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(int64(timeout)))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
 		defer cancel()
 		proxies := tunnel.Proxies()
-		proxy := proxies[C.GoString(proxy_name)]
+		proxy := proxies[proxy_name]
 		if proxy == nil {
-			data, err := json.Marshal(map[string]int64{
-				"delay": -1,
-			})
-			if err != nil {
-				return
-			}
-			fclashgobridge.SendToPort(int64(port), string(data))
+			client.DelayUpdate(proxy_name, -1)
 			return
 		}
-		delay, _, err := proxy.URLTest(ctx, C.GoString(url))
+		delay, _, err := proxy.URLTest(ctx, url)
 		if err != nil || delay == 0 {
-			data, err := json.Marshal(map[string]int64{
-				"delay": -1,
-			})
-			if err != nil {
-				return
-			}
-			fclashgobridge.SendToPort(int64(port), string(data))
+			client.DelayUpdate(proxy_name, -1)
 			return
 		}
-		data, err := json.Marshal(map[string]uint16{
-			"delay": delay,
-		})
-		if err != nil {
-			fmt.Println("err: ", err)
-		}
-		fclashgobridge.SendToPort(int64(port), string(data))
+		client.DelayUpdate(proxy_name, int64(delay))
 	}()
 }
 
-//export get_proxies
-func get_proxies() *C.char {
+func GetProxies() string {
 	proxies := tunnel.Proxies()
 	data, err := json.Marshal(proxies)
 	if err != nil {
-		return C.CString("")
+		return ""
 	}
-	return C.CString(string(data))
+	return string(data)
 }
 
-//export get_providers
-func get_providers() *C.char {
+func GetProviders() string {
 	providers := tunnel.Providers()
 	data, err := json.Marshal(providers)
 	if err != nil {
-		return C.CString("")
+		return ""
 	}
-	return C.CString(string(data))
+	return string(data)
 }
 
-//export get_configs
-func get_configs() *C.char {
+func GetConfigs() string {
 	general := executor.GetGeneral()
 	data, err := json.Marshal(general)
 	if err != nil {
-		return C.CString("")
+		return ""
 	}
-	return C.CString(string(data))
+	return string(data)
 }
 
-// global: 0
-// rule: 1
-// direct: 2
-//export set_tun_mode
-func set_tun_mode(s *C.char) {
-	mode_str := C.GoString(s)
+func SetTunMode(s string) {
+	mode_str := s
 	mode, _ := tunnel.ModeMapping[mode_str]
 	tunnel.SetMode(mode)
 }
 
-//export get_tun_mode
-func get_tun_mode() *C.char {
-	return C.CString(tunnel.Mode().String())
+func GetTunMode() string {
+	return tunnel.Mode().String()
 }
+
 func main() {
 	fmt.Println("hello fclash")
 }

@@ -74,3 +74,10 @@ extension ClashConfigExt on String {
     };
   }
 }
+
+extension LxExt<T> on T {
+  T? takeIf(bool Function(T v) condition) {
+    if (condition.call(this)) return this;
+    return null;
+  }
+}

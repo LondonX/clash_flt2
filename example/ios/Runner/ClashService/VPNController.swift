@@ -74,13 +74,14 @@ public final class VPNController: ObservableObject {
         self.providerManager.connection.stopVPNTunnel()
     }
     
-    func sendProviderMessage(_ data: Data) async -> Data? {
+    public func sendProviderMessage(_ data: Data) async -> Data? {
         guard self.connectionStatus != .invalid || self.connectionStatus != .disconnected else {
             return nil
         }
         return try? await withCheckedThrowingContinuation { continuation in
+            let session = self.providerManager.connection as! NETunnelProviderSession
             do {
-                try (self.providerManager.connection as! NETunnelProviderSession).sendProviderMessage(data) {
+                try session.sendProviderMessage(data) {
                     continuation.resume(with: .success($0))
                 }
             } catch {

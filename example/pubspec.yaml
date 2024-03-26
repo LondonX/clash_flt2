@@ -1,6 +1,7 @@
 name: clash_flt2_example
 description: Demonstrates how to use the clash_flt2 plugin.
 publish_to: "none"
+version: 0.0.2+2
 
 environment:
   sdk: ">=3.1.0 <4.0.0"
@@ -10,6 +11,7 @@ dependencies:
     sdk: flutter
   get:
   path_provider:
+  package_info_plus:
   network_tools: # get port occupying status
   yaml: # resolve port out of ClashFlt2 for using `network_tools`
   flutter_emoji: # fix `yaml` unsupported emoji problem

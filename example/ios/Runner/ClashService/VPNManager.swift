@@ -73,10 +73,10 @@ public final class VPNManager: ObservableObject {
         let manager = (try? await loadCurrentTunnelProviderManager()) ?? NETunnelProviderManager()
         let config = NETunnelProviderProtocol()
         config.providerBundleIdentifier = self.providerBundleIdentifier
-        config.serverAddress = "Clash"
+        config.serverAddress = "localhost"
         config.disconnectOnSleep = false
         config.providerConfiguration = [:]
-        config.excludeLocalNetworks = true
+//        config.excludeLocalNetworks = true
 //        config.includeAllNetworks = true
         manager.protocolConfiguration = config
         manager.isEnabled = true

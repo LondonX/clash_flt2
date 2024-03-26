@@ -1,14 +1,15 @@
 {
+  "originHash" : "aa5e2be9f6c04f499f8e38977c412cc64533297e193842bb105ab181cc43f9eb",
   "pins" : [
     {
       "identity" : "tun2sockskit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/arror/Tun2SocksKit",
+      "location" : "https://github.com/EbrahimTahernejad/Tun2SocksKit.git",
       "state" : {
-        "revision" : "ffe9b93765a7c6068188ad665411a47e685b0573",
-        "version" : "2.5.3"
+        "revision" : "3fd28a9af168f0f3016800acac4f77e3fc0abfc0",
+        "version" : "3.6.7"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

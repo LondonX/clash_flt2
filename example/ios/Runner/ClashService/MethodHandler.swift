@@ -35,6 +35,24 @@ public class MethodHandler: NSObject, FlutterPlugin {
                 channel.invokeMethod("onLogReceived", arguments: ["message": message])
             }
         })
+        vpnManager.setVPNStatusListener { status in
+            switch(status) {
+            case .connecting:
+                channel.invokeMethod("onVPNStatusChange", arguments: ["status": "connecting"])
+                break
+            case .connected:
+                channel.invokeMethod("onVPNStatusChange", arguments: ["status": "connected"])
+                break
+            case .disconnecting:
+                channel.invokeMethod("onVPNStatusChange", arguments: ["status": "disconnecting"])
+                break
+            case .disconnected:
+                channel.invokeMethod("onVPNStatusChange", arguments: ["status": "disconnected"])
+                break
+            default:
+                break
+            }
+        }
         clashPacketTunnelClient = ClashPacketTunnelClient(
             channel: channel,
             getController: {

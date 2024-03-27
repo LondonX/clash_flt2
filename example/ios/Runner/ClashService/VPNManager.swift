@@ -5,6 +5,7 @@ public final class VPNManager: ObservableObject {
     
     private var cancellables: Set<AnyCancellable> = []
     public var controller: VPNController?
+    private var statusChangeListener: ((_ status: NEVPNStatus) -> Void)?
     
     public static let shared = VPNManager()
     
@@ -18,6 +19,11 @@ public final class VPNManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [unowned self] in self.handleVPNConfigurationChangedNotification($0) }
             .store(in: &self.cancellables)
+        NotificationCenter.default
+            .publisher(for: .NEVPNStatusDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [unowned self] in self.handleVPNStateChangeNotification($0) }
+            .store(in: &self.cancellables)
     }
     
     private func handleVPNConfigurationChangedNotification(_ notification: Notification) {
@@ -26,14 +32,19 @@ public final class VPNManager: ObservableObject {
         }
     }
     
+    public func setVPNStatusListener(l: @escaping (_ status: NEVPNStatus) -> Void) {
+        self.statusChangeListener = l
+    }
+    
     private func handleVPNStateChangeNotification(_ notification: Notification) {
         let connection = notification.object as? NEVPNConnection
         if (connection == nil) {
             return
         }
-        if (connection?.status == .disconnected) {
+        if (connection!.status == .disconnected) {
             self.controller = nil
         }
+        statusChangeListener?(connection!.status)
     }
     
     func loadController() async -> VPNController? {

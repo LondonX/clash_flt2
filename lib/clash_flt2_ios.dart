@@ -42,6 +42,9 @@ class ClashFlt2IOS extends ClashFlt2 {
   @override
   void init() {
     _channel.setMethodCallHandler(_methodCallHandler);
+    _channel.invokeMethod("isRunning").then((value) {
+      systemProxyEnabled.value = true == value;
+    });
   }
 
   @override
@@ -125,8 +128,7 @@ class ClashFlt2IOS extends ClashFlt2 {
             "socksPort": configResolveResult.socksPort ?? 0,
           },
         )) {
-      systemProxyEnabled.value = true;
-      _checkRunning();
+      // systemProxyEnabled.value = true;
       return true;
     }
     return false;
@@ -139,18 +141,8 @@ class ClashFlt2IOS extends ClashFlt2 {
 
   @override
   Future<void> stopSystemProxy() async {
-    _runningCheck?.cancel();
     await _channel.invokeMethod("stopSystemProxy");
-    systemProxyEnabled.value = false;
-  }
-
-  Timer? _runningCheck;
-  _checkRunning() async {
-    _runningCheck?.cancel();
-    _runningCheck = Timer.periodic(const Duration(seconds: 1), (timer) async {
-      systemProxyEnabled.value =
-          true == await _channel.invokeMethod("isRunning");
-    });
+    // systemProxyEnabled.value = false;
   }
 
   @override
@@ -205,6 +197,17 @@ class ClashFlt2IOS extends ClashFlt2 {
       case "onLogReceived":
         final message = args["message"] as String;
         addLog(message);
+        break;
+      case "onVPNStatusChange":
+        final status = args["status"] as String;
+        switch (status) {
+          case "connected":
+            systemProxyEnabled.value = true;
+            break;
+          case "disconnected":
+            systemProxyEnabled.value = false;
+            break;
+        }
         break;
     }
   }

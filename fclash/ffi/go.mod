@@ -6,7 +6,7 @@ toolchain go1.21.0
 
 replace github.com/kingtous/fclash-go-bridge => ./fclash-go-bridge
 
-replace github.com/Dreamacro/clash => ./clash-core
+replace github.com/Dreamacro/clash => ../clash-core
 
 require (
 	github.com/Dreamacro/clash v1.18.0

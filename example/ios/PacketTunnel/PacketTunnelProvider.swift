@@ -8,37 +8,29 @@
 import Foundation
 import NetworkExtension
 import Tun2SocksKit
+import ClashClient
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
-    let libClash = ClashBridge()
-    var port: Int?
-    var socksPort: Int?
-    var yamlFile: String?
-    var clashHome: String?
-    var mode: String?
-    var groupName: String?
-    var proxyName: String?
+    private let clashAppClient = ClashAppClient.shared
+    private let sharedConfig = SharedConfig()
     
     override func startTunnel(options: [String : NSObject]?) async throws {
         let port = options!["port"] as! Int
         let socksPort = options!["socksPort"] as! Int
-        self.port = port
-        self.socksPort = socksPort
-        
-        NSLog("[PacketTunel]startTunnel port: \(port), socksPort: \(socksPort)")
-        updateClash(options!)
-        
+        NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort)")
+        // clashInit
+        clashAppClient.setLogListener { message in
+            NSLog("[PacketTunnel]clashLog: \(String(describing: message))")
+        }
+        await sharedConfig.applyToClash(clashClient: clashAppClient)
         if (port != 0) {
             try await self.setTunnelNetworkSettings(initHttpSettings(port))
-        }
-        if (socksPort != 0) {
-            // start TUN
-            Task.init {
-                let tunConfigFile = saveTunnelConfigToFile(socksPort: socksPort)
-                let tunConfig = try! String(contentsOf: tunConfigFile, encoding: .utf8)
-                NSLog("[PacketTunel]starting socks tun with config: \(tunConfig)")
-                let ret = Socks5Tunnel.run(withConfig: tunConfigFile.path)
-                NSLog("[PacketTunel]socks tun finished with code: \(ret)")
+            if (socksPort != 0) {
+                // start TUN
+                let tunConfigFile = createTunnelConfigFile(socksPort: socksPort)
+                Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
+                    NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
+                }
             }
         }
     }
@@ -48,70 +40,58 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     }
     
     override func handleAppMessage(_ data: Data) async -> Data? {
-        let args = try! JSONSerialization.jsonObject(with: data, options: []) as! [String: NSObject]
-        switch(args["method"] as? String) {
-        case "update":
-            updateClash(args)
-            break
+        let params = try! JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
+        let method = params["method"] as! String
+        let args = params["args"] as? [String : Any]
+        switch(method) {
+        case "changeProxy":
+            let selectorName = args!["selectorName"] as! String
+            let proxyName = args!["proxyName"] as! String
+            return wrapAppMessageResult(await clashAppClient.changeProxy(selectorName: selectorName, proxyName: proxyName))
+        case "clashInit":
+            let homeDir = args!["homeDir"] as! String
+            return wrapAppMessageResult(await clashAppClient.clashInit(homeDir: homeDir))
+        case "closeAllConnections":
+            return wrapAppMessageResult(await clashAppClient.closeAllConnections())
+        case "closeConnection":
+            let connectionId = args!["connectionId"] as! String
+            return wrapAppMessageResult(await clashAppClient.closeConnection(connectionId: connectionId))
+        case "getAllConnections":
+            return wrapAppMessageResult(await clashAppClient.getAllConnections())
+        case "getConfig":
+            return wrapAppMessageResult(await clashAppClient.getConfig())
+        case "getConfigs":
+            return wrapAppMessageResult(await clashAppClient.getConfigs())
+        case "getProviders":
+            return wrapAppMessageResult(await clashAppClient.getProviders())
+        case "getProxies":
+            return wrapAppMessageResult(await clashAppClient.getProxies())
         case "getTraffic":
-            let traffic = libClash.getTraffic()
-            return traffic?.data(using: .utf8)
+            return wrapAppMessageResult(await clashAppClient.getTraffic())
+        case "getTunMode":
+            return wrapAppMessageResult(await clashAppClient.getTunMode())
+        case "isConfigValid":
+            let configPath = args!["configPath"] as! String
+            return wrapAppMessageResult(await clashAppClient.isConfigValid(configPath: configPath))
+        case "parseOptions":
+            return wrapAppMessageResult(await clashAppClient.parseOptions())
+        case "setConfig":
+            let configPath = args!["configPath"] as! String
+            return wrapAppMessageResult(await clashAppClient.setConfig(configPath: configPath))
+        case "setHomeDir":
+            let home = args!["home"] as! String
+            return wrapAppMessageResult(await clashAppClient.setHomeDir(home: home))
+        case "setTunMode":
+            let s = args!["s"] as! String
+            return wrapAppMessageResult(await clashAppClient.setTunMode(s: s))
+        case "startLog":
+            return wrapAppMessageResult(await clashAppClient.startLog())
+        case "stopLog":
+            return wrapAppMessageResult(await clashAppClient.stopLog())
         default:
             break
         }
         return nil
-    }
-    
-    private func updateClash(_ args: [String: NSObject]) {
-        let yamlFile = args["yamlFile"] as? String
-        let clashHome = args["clashHome"] as? String
-        let mode = args["mode"] as? String
-        let groupName = args["groupName"] as? String
-        let proxyName = args["proxyName"] as? String
-        
-        let needUpdateYamlFile = yamlFile != nil && self.yamlFile != yamlFile
-        let needUpdateClashHome = clashHome != nil && self.clashHome != clashHome
-        
-        var ret = false
-        if (needUpdateYamlFile) {
-            ret = libClash.setConfig(configPath: yamlFile!)
-            NSLog("[PacketTunel]updateClash setConfig: \(ret)")
-            if (ret) {
-                self.yamlFile = yamlFile
-            }
-        }
-        if (needUpdateClashHome) {
-            ret = libClash.setHomeDir(homeDirPath: clashHome!)
-            NSLog("[PacketTunel]updateClash setHomeDir: \(ret)")
-            if (ret) {
-                self.clashHome = clashHome
-            }
-        }
-        if (needUpdateYamlFile || needUpdateClashHome) {
-            ret = libClash.clashInit(homeDirPath: clashHome!)
-            NSLog("[PacketTunel]updateClash clashInit: \(ret)")
-            ret = libClash.parseOptions()
-            NSLog("[PacketTunel]updateClash parseOptions: \(ret)")
-        }
-        if (mode != nil && self.mode != mode) {
-            libClash.setTunMode(mode: mode!)
-            let result = libClash.getTunMode()!
-            ret = result == mode
-            NSLog("[PacketTunel]updateClash setTunMode: \(ret), result: \(result)")
-            if (ret) {
-                self.mode = mode
-            }
-        }
-        let actualGroupName = groupName ?? self.groupName
-        let actualProxyName = proxyName ?? self.proxyName
-        if (actualGroupName != self.groupName || actualProxyName != self.proxyName) {
-            ret = libClash.changeProxy(selectorName: actualGroupName!, proxyName: actualProxyName!)
-            NSLog("[PacketTunel]updateClash changeProxy: \(ret)")
-            if (ret) {
-                self.groupName = actualGroupName
-                self.proxyName = actualProxyName
-            }
-        }
     }
 }
 
@@ -141,8 +121,8 @@ private func initHttpSettings(_ port: Int) -> NEPacketTunnelNetworkSettings {
     return settings
 }
 
-private func saveTunnelConfigToFile(socksPort: Int) -> URL {
-    let content = """
+private func createTunnelConfig(socksPort: Int) -> String {
+    return """
     tunnel:
       mtu: 9000
 
@@ -152,17 +132,21 @@ private func saveTunnelConfigToFile(socksPort: Int) -> URL {
       udp: 'udp'
 
     misc:
-      task-stack-size: 20480
+      task-stack-size: 2048
       connect-timeout: 5000
       read-write-timeout: 60000
       log-file: stderr
       log-level: info
       limit-nofile: 65535
     """
+}
+
+private func createTunnelConfigFile(socksPort: Int) -> URL {
+    let configContent = createTunnelConfig(socksPort: socksPort)
     if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
         let fileURL = documentsDirectory.appendingPathComponent("tunnel_config.yaml")
         do {
-            try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            try configContent.write(to: fileURL, atomically: true, encoding: .utf8)
             return fileURL
         } catch {
             fatalError("Error writing to file: \(error)")
@@ -170,4 +154,20 @@ private func saveTunnelConfigToFile(socksPort: Int) -> URL {
     } else {
         fatalError("Error finding the documents directory.")
     }
+}
+
+private func wrapAppMessageResult(_ ret: Any?) -> Data? {
+    if (ret == nil || ret is Void) {
+        return nil
+    }
+    if (ret is Int) {
+        return withUnsafeBytes(of: ret as! Int) { Data($0) }
+    }
+    if (ret is Bool) {
+        return withUnsafeBytes(of: (ret as! Bool) ? 1 : 0) { Data($0) }
+    }
+    if (ret is String) {
+        return (ret as! String).data(using: .utf8)
+    }
+    return nil
 }

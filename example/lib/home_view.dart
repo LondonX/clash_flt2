@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -36,7 +37,7 @@ class _HomeViewState extends State<HomeView> {
     if (!resp.isOk) return;
     final appSupportDir = await getApplicationSupportDirectory();
     final clashHomeDir = Directory("${appSupportDir.path}/clash_home");
-    final yamlFile = File("${clashHomeDir.path}/config2.yaml");
+    final yamlFile = File("${clashHomeDir.path}/config.yaml");
     await yamlFile.create(recursive: true);
     await yamlFile.writeAsString(resp.bodyString!);
     setState(() {
@@ -57,7 +58,8 @@ class _HomeViewState extends State<HomeView> {
 
   _setConfig() async {
     if (_yamlFile == null || _mmdbFile == null) return;
-    final result = ClashFlt2.instance.setConfig(_yamlFile!, _yamlFile!.parent);
+    final result =
+        await ClashFlt2.instance.setConfig(_yamlFile!, _yamlFile!.parent);
     setState(() {
       _configResolveResult = result;
     });
@@ -112,6 +114,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     ClashFlt2.instance.init();
+    ClashFlt2.instance.startLogging();
     _startTrafficUpdating();
     super.initState();
   }
@@ -119,15 +122,14 @@ class _HomeViewState extends State<HomeView> {
   @override
   void dispose() {
     _trafficUpdating?.cancel();
+    ClashFlt2.instance.stopLogging();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Clash PC Flt"),
-      ),
+      appBar: AppBar(title: const Text("Clash Flt 2")),
       body: ListView(
         children: [
           _buildStringListTile(
@@ -187,17 +189,18 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
               builder: (context, tunnelMode, widget) {
                 return Row(
                   children: TunnelMode.values.map((e) {
+                    final isSelected = tunnelMode == e;
                     return Expanded(
-                      child: RadioListTile<TunnelMode?>(
-                        value: e,
-                        groupValue: tunnelMode,
-                        onChanged: _configResolveResult == null
-                            ? null
-                            : (value) {
-                                if (value == null) return;
-                                ClashFlt2.instance.setTunnelMode(value);
-                              },
-                        title: Text(e.name),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: FilledButton(
+                          onPressed: isSelected
+                              ? null
+                              : () {
+                                  ClashFlt2.instance.setTunnelMode(e);
+                                },
+                          child: Text(e.name),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -215,6 +218,27 @@ proxy-groups: ${_configResolveResult?.proxyGroups.length ?? "No config set"}
 Total: up: ${_trafficReadable(traffic.totalUpload)} down: ${_trafficReadable(traffic.totalDownload)}
 Current: up: ${_trafficReadable(traffic.currentUpload)}/s down: ${_trafficReadable(traffic.currentDownload)}/s
 """,
+                );
+              },
+            ),
+          ),
+          ListTile(
+            title: const Text("ClashFlt2.instance.logStream"),
+            subtitle: StreamBuilder(
+              stream: ClashFlt2.instance.logStream,
+              builder: (context, snapshot) =>
+                  Text(snapshot.data ?? "no log yet"),
+            ),
+          ),
+          ListTile(
+            title: const Text("Example App Version"),
+            subtitle: FutureBuilder(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final info = snapshot.data;
+                if (info == null) return const SizedBox();
+                return Text(
+                  "${info.version}+${info.buildNumber}",
                 );
               },
             ),

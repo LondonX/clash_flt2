@@ -5,6 +5,7 @@ public final class VPNManager: ObservableObject {
     
     private var cancellables: Set<AnyCancellable> = []
     public var controller: VPNController?
+    private var statusChangeListener: ((_ status: NEVPNStatus) -> Void)?
     
     public static let shared = VPNManager()
     
@@ -18,6 +19,11 @@ public final class VPNManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [unowned self] in self.handleVPNConfigurationChangedNotification($0) }
             .store(in: &self.cancellables)
+        NotificationCenter.default
+            .publisher(for: .NEVPNStatusDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [unowned self] in self.handleVPNStateChangeNotification($0) }
+            .store(in: &self.cancellables)
     }
     
     private func handleVPNConfigurationChangedNotification(_ notification: Notification) {
@@ -26,32 +32,41 @@ public final class VPNManager: ObservableObject {
         }
     }
     
+    public func setVPNStatusListener(l: @escaping (_ status: NEVPNStatus) -> Void) {
+        self.statusChangeListener = l
+    }
+    
     private func handleVPNStateChangeNotification(_ notification: Notification) {
         let connection = notification.object as? NEVPNConnection
         if (connection == nil) {
             return
         }
-        if (connection?.status == .disconnected) {
+        if (connection!.status == .disconnected) {
             self.controller = nil
         }
+        statusChangeListener?(connection!.status)
     }
     
     func loadController() async -> VPNController? {
-        if let manager = try? await self.loadCurrentTunnelProviderManager() {
-            if self.controller?.isEqually(manager: manager) ?? false {
+        let manager = await self.loadCurrentTunnelProviderManager()
+        if (manager == nil) {
+            self.controller = nil
+        } else {
+            if self.controller?.isEqually(manager: manager!) ?? false {
                 // Nothing
             } else {
-                self.controller = VPNController(providerManager: manager)
+                self.controller = VPNController(providerManager: manager!)
             }
-        } else {
-            self.controller = nil
         }
         return self.controller
     }
     
-    private func loadCurrentTunnelProviderManager() async throws -> NETunnelProviderManager? {
-        let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-        let first = managers.first { manager in
+    private func loadCurrentTunnelProviderManager() async -> NETunnelProviderManager? {
+        let managers = try? await NETunnelProviderManager.loadAllFromPreferences()
+        if (managers == nil) {
+            return nil
+        }
+        let first = managers!.first { manager in
             guard let configuration = manager.protocolConfiguration as? NETunnelProviderProtocol else {
                 return false
             }
@@ -73,10 +88,10 @@ public final class VPNManager: ObservableObject {
         let manager = (try? await loadCurrentTunnelProviderManager()) ?? NETunnelProviderManager()
         let config = NETunnelProviderProtocol()
         config.providerBundleIdentifier = self.providerBundleIdentifier
-        config.serverAddress = "Clash"
+        config.serverAddress = "localhost"
         config.disconnectOnSleep = false
         config.providerConfiguration = [:]
-        config.excludeLocalNetworks = true
+//        config.excludeLocalNetworks = true
 //        config.includeAllNetworks = true
         manager.protocolConfiguration = config
         manager.isEnabled = true

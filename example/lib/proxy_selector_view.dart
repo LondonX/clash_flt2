@@ -103,8 +103,8 @@ class _ProxySelectorViewState extends State<ProxySelectorView>
                           "ClashFlt2.instance.delayOf(proxy.name): $delay",
                           style: TextStyle(
                             color: delay == -1
-                                ? Colors.red
-                                : delay < 300
+                                ? Colors.grey
+                                : delay < 500
                                     ? Colors.green
                                     : delay < 1000
                                         ? Colors.amber

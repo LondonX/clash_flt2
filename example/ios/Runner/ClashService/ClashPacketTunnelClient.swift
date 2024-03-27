@@ -43,12 +43,7 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
     }
     
     public func asyncTestDelay(proxyName: String, url: String, timeout: Int) async {
-        let data = await invokeControllerIntMethod("asyncTestDelay", [
-            "proxyName": proxyName,
-            "url": url,
-            "timeout": timeout,
-        ])
-        delayUpdateListener?(proxyName, data)
+        print("asyncTestDelay cannot be called in ClashPacketTunnelClient")
     }
     
     public func changeProxy(selectorName: String, proxyName: String) async -> Int {
@@ -59,8 +54,8 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
         return await invokeControllerIntMethod("clashInit", ["homeDir": homeDir])
     }
 
-    public func closeAllConnections() async{
-        let _ = await invokeControllerMethod("closeAllConnections", nil)
+    public func closeAllConnections() async {
+        await invokeControllerVoidMethod("closeAllConnections", nil)
     }
 
     public func closeConnection(connectionId: String) async -> Bool {
@@ -112,15 +107,15 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
     }
 
     public func setTunMode(s: String) async {
-        let _ = await invokeControllerMethod("setTunMode", ["s": s])
+        await invokeControllerVoidMethod("setTunMode", ["s": s])
     }
 
     public func startLog() async{
-        let _ = await invokeControllerMethod("startLog", nil)
+        await invokeControllerVoidMethod("startLog", nil)
     }
 
     public func stopLog() async{
-        let _ = await invokeControllerMethod("stopLog", nil)
+        await invokeControllerVoidMethod("stopLog", nil)
     }
     
     private func invokeControllerMethod(_ method: String, _ args: [String:Any?]?) async -> Data? {
@@ -131,6 +126,10 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
                 "args": args ?? [:]
             ])
         )
+    }
+    
+    private func invokeControllerVoidMethod(_ method: String, _ args: [String:Any?]?) async {
+        let _ = await invokeControllerMethod(method, args)
     }
     
     private func invokeControllerIntMethod(_ method: String, _ args: [String:Any?]?) async -> Int {

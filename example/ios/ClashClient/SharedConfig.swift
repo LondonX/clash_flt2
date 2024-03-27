@@ -42,7 +42,22 @@ public class SharedConfig {
         save()
     }
     
+    public func saveStartLog() {
+        syncData["startLog"] = true
+        save()
+    }
+    
+    public func saveStopLog() {
+        syncData.removeValue(forKey: "startLog")
+        save()
+    }
+    
     public func applyToClash(clashClient: ClashAppClient) async {
+        let shouldStartLog = syncData["startLog"] as? Bool
+        if(shouldStartLog == true) {
+            let _ = await clashClient.startLog()
+        }
+
         let _ = await clashClient.setConfig(configPath: syncData["setConfig"] as! String)
         let _ = await clashClient.setHomeDir(home: syncData["setHomeDir"] as! String)
         let _ = await clashClient.clashInit(homeDir: syncData["clashInit"] as! String)
@@ -103,4 +118,10 @@ public func makeShared(_ source: URL) -> URL {
     }
     try! fileManager.copyItem(at: source, to: shared)
     return shared
+}
+
+public func makeSharedPath(_ filePath: String) -> String {
+    let source = URL(string: "file://" + filePath)!
+    let url = makeShared(source)
+    return url.path
 }

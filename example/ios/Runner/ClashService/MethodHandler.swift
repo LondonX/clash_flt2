@@ -51,7 +51,7 @@ public class MethodHandler: NSObject, FlutterPlugin {
             let url = argsMap?["url"] as! String
             let timeout = argsMap?["timeout"] as! Int
             withClash(result) { app, packetTunnel, currentClient in
-                return await currentClient.asyncTestDelay(proxyName: proxyName, url: url, timeout: timeout)
+                return await app.asyncTestDelay(proxyName: proxyName, url: url, timeout: timeout)
             }
         case "changeProxy":
             let selectorName = argsMap?["selectorName"] as! String
@@ -63,7 +63,8 @@ public class MethodHandler: NSObject, FlutterPlugin {
             }
         case "clashInit":
             let homeDir = argsMap?["homeDir"] as! String
-            sharedConfig.saveClashInit(homeDir: homeDir)
+            let sharedPath = makeSharedPath(homeDir)
+            sharedConfig.saveClashInit(homeDir: sharedPath)
             withClash(result) { app, packetTunnel, currentClient in
                 return await app.clashInit(homeDir: homeDir)
             }
@@ -116,17 +117,19 @@ public class MethodHandler: NSObject, FlutterPlugin {
             }
         case "setConfig":
             let configPath = argsMap?["configPath"] as! String
-            let shadowConfigPath = argsMap?["shadowConfigPath"] as! String
-            sharedConfig.saveSetConfig(configPath: configPath)
+            let sharedPath = makeSharedPath(configPath)
+            let shadowPath = argsMap?["shadowConfigPath"] as! String
+            sharedConfig.saveSetConfig(configPath: sharedPath)
             withClash(result) { app, packetTunnel, currentClient in
-                let _ = await packetTunnel?.setConfig(configPath: configPath)
-                return await app.setConfig(configPath: shadowConfigPath)
+                let _ = await packetTunnel?.setConfig(configPath: sharedPath)
+                return await app.setConfig(configPath: shadowPath)
             }
         case "setHomeDir":
             let home = argsMap?["home"] as! String
-            sharedConfig.saveSetHomeDir(home: home)
+            let sharedPath = makeSharedPath(home)
+            sharedConfig.saveSetHomeDir(home: sharedPath)
             withClash(result) { app, packetTunnel, currentClient in
-                let _ = await packetTunnel?.setHomeDir(home: home)
+                let _ = await packetTunnel?.setHomeDir(home: sharedPath)
                 return await app.setHomeDir(home: home)
             }
         case "setTunMode":
@@ -137,11 +140,15 @@ public class MethodHandler: NSObject, FlutterPlugin {
                 return await app.setTunMode(s: s)
             }
         case "startLog":
+            sharedConfig.saveStartLog()
             withClash(result) { app, packetTunnel, currentClient in
+                let _ = await packetTunnel?.startLog()
                 return await app.startLog()
             }
         case "stopLog":
+            sharedConfig.saveStopLog()
             withClash(result) { app, packetTunnel, currentClient in
+                let _ = await packetTunnel?.stopLog()
                 return await app.stopLog()
             }
         case "isRunning":

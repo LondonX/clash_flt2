@@ -37,21 +37,25 @@ public final class VPNManager: ObservableObject {
     }
     
     func loadController() async -> VPNController? {
-        if let manager = try? await self.loadCurrentTunnelProviderManager() {
-            if self.controller?.isEqually(manager: manager) ?? false {
+        let manager = await self.loadCurrentTunnelProviderManager()
+        if (manager == nil) {
+            self.controller = nil
+        } else {
+            if self.controller?.isEqually(manager: manager!) ?? false {
                 // Nothing
             } else {
-                self.controller = VPNController(providerManager: manager)
+                self.controller = VPNController(providerManager: manager!)
             }
-        } else {
-            self.controller = nil
         }
         return self.controller
     }
     
-    private func loadCurrentTunnelProviderManager() async throws -> NETunnelProviderManager? {
-        let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-        let first = managers.first { manager in
+    private func loadCurrentTunnelProviderManager() async -> NETunnelProviderManager? {
+        let managers = try? await NETunnelProviderManager.loadAllFromPreferences()
+        if (managers == nil) {
+            return nil
+        }
+        let first = managers!.first { manager in
             guard let configuration = manager.protocolConfiguration as? NETunnelProviderProtocol else {
                 return false
             }

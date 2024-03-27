@@ -17,15 +17,19 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     override func startTunnel(options: [String : NSObject]?) async throws {
         let port = options!["port"] as! Int
         let socksPort = options!["socksPort"] as! Int
-        NSLog("[PacketTunel]startTunnel port: \(port), socksPort: \(socksPort)")
+        NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort)")
         // clashInit
+        clashAppClient.setLogListener { message in
+            NSLog("[PacketTunnel]clashLog: \(String(describing: message))")
+        }
         await sharedConfig.applyToClash(clashClient: clashAppClient)
         if (port != 0) {
             try await self.setTunnelNetworkSettings(initHttpSettings(port))
             if (socksPort != 0) {
                 // start TUN
-                Socks5Tunnel.run(withConfig: .string(content: createTunnelConfig(socksPort: socksPort))) { code in
-                    NSLog("[PacketTunel]Socks5Tunnel ret: \(code)")
+                let tunConfigFile = createTunnelConfigFile(socksPort: socksPort)
+                Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
+                    NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
                 }
             }
         }
@@ -40,11 +44,6 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         let method = params["method"] as! String
         let args = params["args"] as? [String : Any]
         switch(method) {
-        case "asyncTestDelay":
-            let proxyName = args!["proxyName"] as! String
-            let url = args!["url"] as! String
-            let timeout = args!["timeout"] as! Int
-            return wrapAppMessageResult(await clashAppClient.asyncTestDelay(proxyName: proxyName, url: url, timeout: timeout))
         case "changeProxy":
             let selectorName = args!["selectorName"] as! String
             let proxyName = args!["proxyName"] as! String
@@ -140,6 +139,21 @@ private func createTunnelConfig(socksPort: Int) -> String {
       log-level: info
       limit-nofile: 65535
     """
+}
+
+private func createTunnelConfigFile(socksPort: Int) -> URL {
+    let configContent = createTunnelConfig(socksPort: socksPort)
+    if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+        let fileURL = documentsDirectory.appendingPathComponent("tunnel_config.yaml")
+        do {
+            try configContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            return fileURL
+        } catch {
+            fatalError("Error writing to file: \(error)")
+        }
+    } else {
+        fatalError("Error finding the documents directory.")
+    }
 }
 
 private func wrapAppMessageResult(_ ret: Any?) -> Data? {

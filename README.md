@@ -70,20 +70,24 @@ dart run ffigen
 ### Create & Setup Targets
 1. Create a `NetworkExtension` target named `PacketTunnel`, the XCode will auto create a file named `PacketTunnelProvider.swift`.
 2. Create a `Framework` target named `ClashClient`, the XCode will auto create a Group(folder) named `ClashClient`.
-3. Add `ClashClient.framework` into `TARGET > Runner > General > Frameworks, Libraries, and Embedded content` with `Embed & Sign`.
-4. Add `PacketTunnel.appex` into `TARGET > Runner > General > Frameworks, Libraries, and Embedded content` with `Embed Without Signing`.
-5. Add `Libclash.xcframework` into `TARGET > ClashClient > General > Frameworks, Libraries, and Embedded content` with `Do Not Embed`.
-6. Add `Tun2SocksKit-main` into `PacketTunnel` by `Swift Package Manager (SPM)` from https://github.com/EbrahimTahernejad/Tun2SocksKit with both `Tun2SocksKit` and `Tun2SocksKitC` libs.
-7. Add `ClashClient.framework` into `TARGET > PacketTunnel > General > Frameworks, Libraries, and Embedded content` with `Do Not Embed`.
-8. Add `Network Extension` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.
+3. Add `LibClash.xcframework` into project by right click on `Project Navigator > Runner > Frameworks` and select `Add Files to "Runner"`, with Copy if needed checked.
+4. Add `ClashClient.framework` into `TARGET > Runner > General > Frameworks, Libraries, and Embedded content` with `Embed & Sign`.
+5. Add `ClashClient.framework` into `TARGET > PacketTunnel > General > Frameworks, Libraries, and Embedded content` with `Do Not Embed`.
+6. Add `PacketTunnel.appex` into `TARGET > Runner > General > Frameworks, Libraries, and Embedded content` with `Embed Without Signing`.
+7. Add `Libclash.xcframework` into `TARGET > ClashClient > General > Frameworks, Libraries, and Embedded content` with `Do Not Embed`.
+8. Add `Tun2SocksKit-main` into `PacketTunnel` by `Swift Package Manager (SPM)` from https://github.com/EbrahimTahernejad/Tun2SocksKit with both `Tun2SocksKit` and `Tun2SocksKitC` libs.
+9.  Add `Network Extension` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.
     * Check `Packet Tunnel`.
-9. Add `App Groups` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.
+10. Add `App Groups` both in `Runner` and `PacketTunnel`'s `Signing & Capabilities` tab.
     * Check `group.<yourBundleId>`
+11. Check all targets' `Minimum Developments` are the same.
+
 ### Copy & Modify Files
-1. Copy and add all files of `example/ios/ClashClient/` to `ClashClient` target.
-2. Copy and add all files of `example/ios/ClashService/` to `Runner` target.
-3. Copy `example/ios/PacketTunnel/PacketTunnelProvider.swift` to `PacketTunnel` target.
-4. Modify `AppDelegate.swift`
+1. Delete `ClashClient/ClashClient.h`.
+2. Copy and add all files of `example/ios/ClashClient/` to `ClashClient` target.
+3. Copy and add all files of `example/ios/ClashService/` to `Runner` target.
+4. Copy `example/ios/PacketTunnel/PacketTunnelProvider.swift` to `PacketTunnel` target.
+5. Modify `AppDelegate.swift`
    * Add ```MethodHandler.register(with: self.registrar(forPlugin: MethodHandler.name)!)```.
    ```swift
    import UIKit
@@ -114,4 +118,6 @@ dart run ffigen
 
 ## FAQ
 ### iOS build error: Cycle inside Runner; building could produce unreliable results.
-* Mode `Embed Foundation Extensions` above to `Run Script` in `Runner`'s `Build Phases`.
+* Move `Embed Foundation Extensions` above to `Run Script` in `Runner`'s `Build Phases`.
+### iOS run with extremely lag
+* Edit Scheme, uncheck `Debug executable`(but will cause `flutter run` failure).

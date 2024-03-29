@@ -126,6 +126,7 @@ class ClashFlt2IOS extends ClashFlt2 {
           {
             "port": configResolveResult.httpPort ?? 0,
             "socksPort": configResolveResult.socksPort ?? 0,
+            "mixedPort": configResolveResult.mixedPort ?? 0,
           },
         )) {
       // systemProxyEnabled.value = true;

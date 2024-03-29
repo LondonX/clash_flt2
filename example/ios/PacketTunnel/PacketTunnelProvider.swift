@@ -17,19 +17,30 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     override func startTunnel(options: [String : NSObject]?) async throws {
         let port = options!["port"] as! Int
         let socksPort = options!["socksPort"] as! Int
-        NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort)")
+        let mixedPort = options!["mixedPort"] as! Int
+        NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort), mixedPort: \(mixedPort)")
         // clashInit
         clashAppClient.setLogListener { message in
             NSLog("[PacketTunnel]clashLog: \(String(describing: message))")
         }
         await sharedConfig.applyToClash(clashClient: clashAppClient)
-        if (port != 0) {
-            try await self.setTunnelNetworkSettings(initHttpSettings(port))
-            if (socksPort != 0) {
-                // start TUN
-                let tunConfigFile = createTunnelConfigFile(socksPort: socksPort)
-                Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
-                    NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
+        // prefers to use mixedPort
+        if (mixedPort != 0) {
+            try await self.setTunnelNetworkSettings(initHttpSettings(mixedPort))
+            // start TUN
+            let tunConfigFile = createTunnelConfigFile(socksPort: mixedPort)
+            Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
+                NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
+            }
+        } else {
+            if (port != 0) {
+                try await self.setTunnelNetworkSettings(initHttpSettings(port))
+                if (socksPort != 0) {
+                    // start TUN
+                    let tunConfigFile = createTunnelConfigFile(socksPort: socksPort)
+                    Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
+                        NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
+                    }
                 }
             }
         }

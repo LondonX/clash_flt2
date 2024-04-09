@@ -121,7 +121,7 @@ public func makeShared(_ source: URL) -> URL {
 }
 
 public func makeSharedPath(_ filePath: String) -> String {
-    let source = URL(string: "file://" + filePath)!
+    let source = URL(fileURLWithPath: filePath)
     let url = makeShared(source)
     return url.path
 }

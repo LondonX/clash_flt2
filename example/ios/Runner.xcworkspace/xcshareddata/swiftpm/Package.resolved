@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/EbrahimTahernejad/Tun2SocksKit.git",
       "state" : {
-        "revision" : "3fd28a9af168f0f3016800acac4f77e3fc0abfc0",
-        "version" : "3.6.7"
+        "revision" : "28811514e285925055e696a217f2a3d0ccca9b4e",
+        "version" : "3.6.8"
       }
     }
   ],

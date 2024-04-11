@@ -15,33 +15,20 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     private let sharedConfig = SharedConfig()
     
     override func startTunnel(options: [String : NSObject]?) async throws {
-        let port = options!["port"] as! Int
-        let socksPort = options!["socksPort"] as! Int
         let mixedPort = options!["mixedPort"] as! Int
-        NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort), mixedPort: \(mixedPort)")
-        // clashInit
-        clashAppClient.setLogListener { message in
-            NSLog("[PacketTunnel]clashLog: \(String(describing: message))")
-        }
-        await sharedConfig.applyToClash(clashClient: clashAppClient)
-        // prefers to use mixedPort
         if (mixedPort != 0) {
-            try await self.setTunnelNetworkSettings(initHttpSettings(mixedPort))
+            NSLog("[PacketTunnel]mixedPort: \(mixedPort), overriding port and socksPort")
+        }
+        let port = mixedPort != 0 ? mixedPort : options!["port"] as! Int
+        let socksPort = mixedPort != 0 ? mixedPort : options!["socksPort"] as! Int
+        NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort)")
+        // clashInit
+        await sharedConfig.applyToClash(clashClient: clashAppClient)
+        try await self.setTunnelNetworkSettings(initHttpSettings(port))
+        if (socksPort != 0) {
             // start TUN
-            let tunConfigFile = createTunnelConfigFile(socksPort: mixedPort)
-            Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
+            Socks5Tunnel.run(withConfig: .string(content: createTunnelConfig(socksPort: socksPort))) { code in
                 NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
-            }
-        } else {
-            if (port != 0) {
-                try await self.setTunnelNetworkSettings(initHttpSettings(port))
-                if (socksPort != 0) {
-                    // start TUN
-                    let tunConfigFile = createTunnelConfigFile(socksPort: socksPort)
-                    Socks5Tunnel.run(withConfig: .file(path: tunConfigFile)) { code in
-                        NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
-                    }
-                }
             }
         }
     }
@@ -150,21 +137,6 @@ private func createTunnelConfig(socksPort: Int) -> String {
       log-level: info
       limit-nofile: 65535
     """
-}
-
-private func createTunnelConfigFile(socksPort: Int) -> URL {
-    let configContent = createTunnelConfig(socksPort: socksPort)
-    if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-        let fileURL = documentsDirectory.appendingPathComponent("tunnel_config.yaml")
-        do {
-            try configContent.write(to: fileURL, atomically: true, encoding: .utf8)
-            return fileURL
-        } catch {
-            fatalError("Error writing to file: \(error)")
-        }
-    } else {
-        fatalError("Error finding the documents directory.")
-    }
 }
 
 private func wrapAppMessageResult(_ ret: Any?) -> Data? {

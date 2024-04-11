@@ -18,11 +18,16 @@ class AndroidHelper {
     });
   }
 
-  Future<bool> startService(int port, int socksPort) async {
+  Future<bool> startService(int port, int socksPort, int mixedPort) async {
     final success = true ==
         await _mobileChannel.invokeMethod(
           "startTun",
-          {"port": port, "socksPort": socksPort, ..._args},
+          {
+            "port": port,
+            "socksPort": socksPort,
+            "mixedPort": mixedPort,
+            ..._args,
+          },
         );
     systemProxyEnabled.value = success;
     return success;

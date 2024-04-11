@@ -30,8 +30,17 @@ class ClashFlt2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "startTun" -> {
-                val port = call.argument<Int>("port")!!
-                val socksPort = call.argument<Int>("socksPort")!!
+                val mixedPort = call.argument<Int>("mixedPort")!!
+                val port = if(mixedPort != 0) {
+                    mixedPort
+                } else {
+                    call.argument<Int>("port")!!
+                }
+                val socksPort = if(mixedPort != 0) {
+                    mixedPort
+                } else {
+                    call.argument<Int>("socksPort")!!
+                }
                 clashServiceScope(result) {
                     val prepared = prepareVpn()
                     if (!prepared) {

@@ -110,12 +110,16 @@ class ClashFlt2FFI extends ClashFlt2 {
   Future<bool> startSystemProxy(
     ClashConfigResolveResult configResolveResult,
   ) async {
-    final hPort = configResolveResult.httpPort ?? configResolveResult.mixedPort;
-    final sPort =
-        configResolveResult.socksPort ?? configResolveResult.mixedPort;
+    final mPort = configResolveResult.mixedPort;
+    final hPort = mPort ?? configResolveResult.httpPort;
+    final sPort = mPort ?? configResolveResult.socksPort;
     try {
       if (Platform.isAndroid) {
-        return await _mobileHelper!.startService(hPort ?? 0, sPort ?? 0);
+        return await _mobileHelper!.startService(
+          hPort ?? 0,
+          sPort ?? 0,
+          mPort ?? 0,
+        );
       }
       await Future.wait([
         if (hPort != null)

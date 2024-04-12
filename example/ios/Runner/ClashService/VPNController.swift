@@ -42,7 +42,7 @@ public final class VPNController: ObservableObject {
         self.providerManager === manager
     }
     
-    public func startVPN(args: [String : NSObject]) async throws {
+    public func startVPN(args: [String : NSObject]? = nil) async throws {
         switch self.providerManager.connection.status {
         case .disconnecting, .disconnected:
             break

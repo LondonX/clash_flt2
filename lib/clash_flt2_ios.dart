@@ -120,15 +120,7 @@ class ClashFlt2IOS extends ClashFlt2 {
   Future<bool> startSystemProxy(
     ClashConfigResolveResult configResolveResult,
   ) async {
-    if (true ==
-        await _channel.invokeMethod(
-          "startSystemProxy",
-          {
-            "port": configResolveResult.httpPort ?? 0,
-            "socksPort": configResolveResult.socksPort ?? 0,
-            "mixedPort": configResolveResult.mixedPort ?? 0,
-          },
-        )) {
+    if (true == await _channel.invokeMethod("startSystemProxy")) {
       // systemProxyEnabled.value = true;
       return true;
     }

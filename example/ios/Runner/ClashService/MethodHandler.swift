@@ -187,7 +187,7 @@ public class MethodHandler: NSObject, FlutterPlugin {
                         return
                     }
                     try await Task.sleep(nanoseconds: 100_000_000)//0.1s
-                    try await controller?.startVPN(args: argsMap!)
+                    try await controller?.startVPN()
                 } catch {
                     result(false)
                     return

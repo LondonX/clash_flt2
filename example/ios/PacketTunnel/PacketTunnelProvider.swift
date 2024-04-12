@@ -16,15 +16,18 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     private var isAlive = false
     
     override func startTunnel(options: [String : NSObject]?) async throws {
-        let mixedPort = options!["mixedPort"] as! Int
+        // clashInit
+        await sharedConfig.applyToClash(clashClient: clashAppClient)
+        let configsJson = await clashAppClient.getConfigs()
+        let configs = try JSONSerialization.jsonObject(with: configsJson.data(using: .utf8)!, options: []) as! [String: Any]
+        let mixedPort = configs["mixed-port"] as? Int ?? 0
         if (mixedPort != 0) {
             NSLog("[PacketTunnel]mixedPort: \(mixedPort), overriding port and socksPort")
         }
-        let port = mixedPort != 0 ? mixedPort : options!["port"] as! Int
-        let socksPort = mixedPort != 0 ? mixedPort : options!["socksPort"] as! Int
+        let port = mixedPort != 0 ? mixedPort : configs["port"] as? Int ?? 0
+        let socksPort = mixedPort != 0 ? mixedPort : configs["socks-port"] as? Int ?? 0
         NSLog("[PacketTunnel]startTunnel port: \(port), socksPort: \(socksPort)")
-        // clashInit
-        await sharedConfig.applyToClash(clashClient: clashAppClient)
+
         try await self.setTunnelNetworkSettings(initHttpSettings(port))
         if (socksPort != 0) {
             // start TUN

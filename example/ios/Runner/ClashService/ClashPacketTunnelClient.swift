@@ -31,7 +31,10 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
     }
     
     public func isAlive() async -> Bool {
-        return await self.getController()?.connectionStatus == .connected
+        if (await self.getController()?.connectionStatus != .connected) {
+            return false
+        }
+        return await invokeControllerMethod("isAlive", nil) != nil
     }
     
     public func setDelayUpdateListener(_ f: @escaping (_ name: String,_ delay: Int) -> Void) {

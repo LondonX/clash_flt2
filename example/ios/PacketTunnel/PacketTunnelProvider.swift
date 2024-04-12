@@ -13,6 +13,7 @@ import ClashClient
 class PacketTunnelProvider: NEPacketTunnelProvider {
     private let clashAppClient = ClashAppClient.shared
     private let sharedConfig = SharedConfig()
+    private var isAlive = false
     
     override func startTunnel(options: [String : NSObject]?) async throws {
         let mixedPort = options!["mixedPort"] as! Int
@@ -31,9 +32,11 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 NSLog("[PacketTunnel]Socks5Tunnel ret: \(code)")
             }
         }
+        isAlive = true
     }
 
     override func stopTunnel(with reason: NEProviderStopReason) async {
+        isAlive = false
         Socks5Tunnel.quit()
     }
     
@@ -86,6 +89,8 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return wrapAppMessageResult(await clashAppClient.startLog())
         case "stopLog":
             return wrapAppMessageResult(await clashAppClient.stopLog())
+        case "isAlive":
+            return wrapAppMessageResult(isAlive)
         default:
             break
         }

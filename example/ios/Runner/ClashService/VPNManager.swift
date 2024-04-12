@@ -28,7 +28,7 @@ public final class VPNManager: ObservableObject {
     
     private func handleVPNConfigurationChangedNotification(_ notification: Notification) {
         Task(priority: .high) {
-            await self.loadController()
+            try await self.loadController()
         }
     }
     

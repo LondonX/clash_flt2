@@ -34,7 +34,11 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
         if (await self.getController()?.connectionStatus != .connected) {
             return false
         }
-        return await invokeControllerMethod("isAlive", nil) != nil
+        let data = await invokeControllerMethod("isAlive", nil)
+        if (data == nil) {
+            return false
+        }
+        return data!.withUnsafeBytes { $0.load(as: Bool.self) }
     }
     
     public func setDelayUpdateListener(_ f: @escaping (_ name: String,_ delay: Int) -> Void) {
@@ -46,7 +50,7 @@ public class ClashPacketTunnelClient: ClashClientProtocol {
     }
     
     public func asyncTestDelay(proxyName: String, url: String, timeout: Int) async {
-        print("asyncTestDelay cannot be called in ClashPacketTunnelClient")
+        await invokeControllerVoidMethod("asyncTestDelay", ["proxyName": proxyName, "url": url, "timeout": timeout])
     }
     
     public func changeProxy(selectorName: String, proxyName: String) async -> Int {

@@ -48,6 +48,11 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         let method = params["method"] as! String
         let args = params["args"] as? [String : Any]
         switch(method) {
+        case "asyncTestDelay":
+            let proxyName = args!["proxyName"] as! String
+            let url = args!["url"] as! String
+            let timeout = args!["timeout"] as! Int
+            return wrapAppMessageResult(await clashAppClient.asyncTestDelay(proxyName: proxyName, url: url, timeout: timeout))
         case "changeProxy":
             let selectorName = args!["selectorName"] as! String
             let proxyName = args!["proxyName"] as! String

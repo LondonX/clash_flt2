@@ -69,6 +69,7 @@ public class MethodHandler: NSObject, FlutterPlugin {
             let url = argsMap?["url"] as! String
             let timeout = argsMap?["timeout"] as! Int
             withClash(result) { app, packetTunnel, currentClient in
+                //TODO cannot use currentClient because the result of packetTunnel cannot be called back here
                 return await app.asyncTestDelay(proxyName: proxyName, url: url, timeout: timeout)
             }
         case "changeProxy":

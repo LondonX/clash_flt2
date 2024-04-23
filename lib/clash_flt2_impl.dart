@@ -105,6 +105,8 @@ abstract class ClashFlt2 {
   /// test delay of given [proxyNames]
   /// the result can be listen with [delayOf]
   ///
+  /// **DO NOT** call this method before last call finished.
+  ///
   Future<void> testDelay(
     Set<String> proxyNames, {
     Duration timeout = const Duration(seconds: 5),

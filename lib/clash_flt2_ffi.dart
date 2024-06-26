@@ -71,7 +71,9 @@ class ClashFlt2FFI extends ClashFlt2 {
     clashFFI.set_config(yamlFile.path.toNativeUtf8().cast());
     clashFFI.set_home_dir(clashHome.path.toNativeUtf8().cast());
     clashFFI.clash_init(clashHome.path.toNativeUtf8().cast());
-    clashFFI.parse_options();
+    if (0 != clashFFI.parse_options()) {
+      return null;
+    }
     final configsJson = clashFFI.get_configs().cast<Utf8>().toDartString();
     final proxiesJson = clashFFI.get_proxies().cast<Utf8>().toDartString();
     final configs = jsonDecode(configsJson);

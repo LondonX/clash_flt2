@@ -15,6 +15,10 @@ GOOS=darwin CGO_ENABLED=1 go build -ldflags="-w -s -extldflags=$MACOS_EXT_FLAGS"
 echo "Building libclash.dll"
 GOOS=windows CGO_ENABLED=1 GOARCH=amd64 CC=x86_64-w64-mingw32-gcc go build -ldflags="-w -s" -buildmode=c-shared -o ../dist/libclash.dll
 
+# Linux
+echo "Building Linux libclash.so"
+GOOS=linux CGO_ENABLED=1 GOARCH=amd64 CC=x86_64-linux-musl-gcc  CXX=x86_64-linux-musl-g++ go build -ldflags="-w -s" -buildmode=c-shared -o ../dist/libclash.so
+
 # Android
 echo "Building Android libclash.so"
 echo "  > Build for armeabi-v7a"

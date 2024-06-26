@@ -77,10 +77,13 @@ class ClashFlt2IOS extends ClashFlt2 {
     final shadowConfigFile = File("${yamlFile.parent.path}/config_shadow.yaml");
     await shadowConfigFile.writeAsString(configShadow, flush: true);
 
-    await _channel.invokeMethod("setConfig", {
-      "configPath": yamlFile.path,
-      "shadowConfigPath": shadowConfigFile.path,
-    });
+    if (0 !=
+        await _channel.invokeMethod<int>("setConfig", {
+          "configPath": yamlFile.path,
+          "shadowConfigPath": shadowConfigFile.path,
+        })) {
+      return null;
+    }
     await _channel.invokeMethod("setHomeDir", {"home": clashHome.path});
     await _channel.invokeMethod("clashInit", {"homeDir": clashHome.path});
     await _channel.invokeMethod("parseOptions");

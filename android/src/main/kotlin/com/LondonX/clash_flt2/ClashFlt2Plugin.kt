@@ -12,7 +12,11 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 private const val ACTION_PREPARE_VPN = 0xF1
@@ -31,31 +35,38 @@ class ClashFlt2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         when (call.method) {
             "startTun" -> {
                 val mixedPort = call.argument<Int>("mixedPort")!!
-                val port = if(mixedPort != 0) {
+                val port = if (mixedPort != 0) {
                     mixedPort
                 } else {
                     call.argument<Int>("port")!!
                 }
-                val socksPort = if(mixedPort != 0) {
+                val socksPort = if (mixedPort != 0) {
                     mixedPort
                 } else {
                     call.argument<Int>("socksPort")!!
                 }
-                clashServiceScope(result) {
-                    val prepared = prepareVpn()
-                    if (!prepared) {
+                scope.launch {
+                    if (!prepareVpn()) {
                         result.success(false)
-                        return@clashServiceScope
+                        return@launch
                     }
-                    it.startTun(port, socksPort)
+                    activity?.also { TunService.start(it, port, socksPort) }
                     result.success(true)
                 }
             }
+
             "stopTun" -> {
-                service?.stopService(null)
+                activity?.also { TunService.stop(it) }
                 result.success(true)
             }
-            "isRunning" -> result.success(TunService.isTunRunning)
+
+            "isRunning" -> {
+                scope.launch {
+                    val isRunning = activity?.let { TunService.isRunning(it) } ?: false
+                    result.success(isRunning)
+                }
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -100,22 +111,6 @@ class ClashFlt2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         activity.startActivityForResult(prepareIntent, ACTION_PREPARE_VPN)
         return suspendCancellableCoroutine {
             vpnPreparing = it
-        }
-    }
-
-    private var service: TunService? = null
-    private fun clashServiceScope(
-        result: Result,
-        withService: suspend CoroutineScope.(TunService) -> Unit,
-    ) {
-        val activity = this.activity
-        if (activity == null) {
-            result.error("Clash.startClash", "activity is null!!!", null)
-            return
-        }
-        scope.launch {
-            service = TunService.bind(activity)
-            withService.invoke(this, service!!)
         }
     }
 }

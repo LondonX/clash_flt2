@@ -39,7 +39,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.0.0+1000"
+    version: "1.0.2+1020"
   clock:
     dependency: transitive
     description:

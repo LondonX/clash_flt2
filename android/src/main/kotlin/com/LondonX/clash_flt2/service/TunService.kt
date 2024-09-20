@@ -1,115 +1,73 @@
 package com.LondonX.clash_flt2.service
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.net.ProxyInfo
 import android.net.VpnService
+import android.os.Binder
 import android.os.Build
+import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import com.LondonX.tun2socks.Tun2Socks
 import io.flutter.BuildConfig
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.Continuation
+import kotlinx.coroutines.*
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
-import kotlin.system.exitProcess
-
-private fun getActionStartTun(context: Context): String = "${context.packageName}.ACTION_START_TUN"
-private fun getActionStopTun(context: Context): String = "${context.packageName}.ACTION_STOP_TUN"
-private fun getActionAskIfRunning(context: Context): String =
-    "${context.packageName}.ACTION_ASK_RUNNING"
-
-private fun getActionReportIsRunning(context: Context): String =
-    "${context.packageName}.ACTION_IS_RUNNING"
-
-private const val EXTRA_PORT = "EXTRA_PORT"
-private const val EXTRA_SOCKS_PORT = "EXTRA_SOCKS_PORT"
-
 
 class TunService : VpnService() {
     companion object {
+        var isTunRunning = false
+            private set
 
-        fun start(context: Context, port: Int, socksPort: Int) {
-            toggle(context, true, port, socksPort)
-        }
+        suspend fun bind(context: Context): TunService {
+            return suspendCancellableCoroutine { continuation ->
+                context.bindService(
+                    Intent(context, TunService::class.java), object : ServiceConnection {
+                        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+                            continuation.resume((binder as LocalBinder).service)
+                        }
 
-        fun stop(context: Context) {
-            toggle(context, false, null, null)
-        }
-
-        private var runningAwaiting: Continuation<Boolean>? = null
-
-        suspend fun isRunning(context: Context): Boolean {
-            val runningReceiver = object : BroadcastReceiver() {
-                override fun onReceive(p0: Context?, p1: Intent?) {
-                    if (p1?.action != getActionReportIsRunning(context)) return
-                    runningAwaiting?.resume(true)
-                }
+                        override fun onServiceDisconnected(name: ComponentName) {
+                        }
+                    }, Context.BIND_AUTO_CREATE
+                )
             }
-            context.registerReceiverCompat(
-                runningReceiver, IntentFilter(getActionReportIsRunning(context)),
-            )
-            context.sendBroadcast(Intent(getActionAskIfRunning(context)))
-            val result = withTimeoutOrNull(100) {
-                suspendCoroutine { runningAwaiting = it }
-            } ?: false
-            context.unregisterReceiver(runningReceiver)
-            return result
-        }
-
-        private fun toggle(context: Context, enabled: Boolean, port: Int?, socksPort: Int?) {
-            context.startService(
-                Intent(
-                    context, TunService::class.java
-                ).setAction(if (enabled) getActionStartTun(context) else getActionStopTun(context))
-                    .putExtra(EXTRA_PORT, port).putExtra(EXTRA_SOCKS_PORT, socksPort)
-            )
         }
     }
 
-    private val runningCheckReceiver = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {
-            if (p1?.action != getActionAskIfRunning(p0 ?: return)) return
-            sendBroadcast(Intent(getActionReportIsRunning(this@TunService)))
-        }
+    private val binder: IBinder = LocalBinder()
+
+    private inner class LocalBinder : Binder() {
+        val service: TunService get() = this@TunService
     }
 
     override fun onCreate() {
         Tun2Socks.initialize(this)
         super.onCreate()
-        registerReceiverCompat(runningCheckReceiver, IntentFilter(getActionAskIfRunning(this)))
     }
 
-    override fun onDestroy() {
+    override fun onBind(intent: Intent?): IBinder {
+        return binder
+    }
+
+    override fun stopService(name: Intent?): Boolean {
+        Tun2Socks.stopTun2Socks()
+        sendBroadcast(Intent("clash_flt2#proxyEnabled").putExtra("systemProxyEnabled", false))
         super.onDestroy()
-        unregisterReceiver(runningCheckReceiver)
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == getActionStopTun(this)) {
-            stopTun()
-            return START_NOT_STICKY
-        }
-        val port: Int = intent?.getIntExtra(EXTRA_PORT, 0) ?: 0
-        val socksPort: Int = intent?.getIntExtra(EXTRA_SOCKS_PORT, 0) ?: 0
-        startTun(port, socksPort)
-        return START_STICKY
+        // tun status
+        isTunRunning = false
+        tunning?.cancel()
+        vpnFd?.close()
+        return true
     }
 
     private var tunning: Job? = null
     private var vpnFd: ParcelFileDescriptor? = null
 
-    private fun startTun(port: Int, socksPort: Int) {
+    fun startTun(port: Int, socksPort: Int) {
+        if (isTunRunning) return
         val setup = setupVpn(port)
         vpnFd = setup.fd
         if (socksPort != 0) {
@@ -131,17 +89,7 @@ class TunService : VpnService() {
                 }
             }
         }
-    }
-
-    private fun stopTun() {
-        Tun2Socks.stopTun2Socks()
-        sendBroadcast(Intent("clash_flt2#proxyEnabled").putExtra("systemProxyEnabled", false))
-        super.onDestroy()
-        // tun status
-        tunning?.cancel()
-        vpnFd?.close()
-        stopSelf()
-        exitProcess(0)
+        isTunRunning = true
     }
 
     private fun setupVpn(port: Int): VpnSetup {
@@ -205,12 +153,3 @@ private fun pendingIntentFlags(flags: Int, mutable: Boolean = false): Int {
 }
 
 data class VpnSetup(val fd: ParcelFileDescriptor, val port: Int)
-
-@SuppressLint("UnspecifiedRegisterReceiverFlag")
-private fun Context.registerReceiverCompat(receiver: BroadcastReceiver, filter: IntentFilter) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
-    } else {
-        registerReceiver(receiver, filter)
-    }
-}

@@ -7,6 +7,7 @@ import 'dart:isolate';
 import 'package:clash_flt2/android_helper.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:proxy_manager/proxy_manager.dart';
 
 import 'entity/clash_config_resolve_result.dart';
@@ -16,6 +17,7 @@ import 'utils.dart';
 import 'clash_flt2_impl.dart';
 
 late NativeLibrary clashFFI;
+const mobileChannel = MethodChannel("FClashPlugin");
 
 ///
 /// ClashFlt implementation with FlutterFFI
